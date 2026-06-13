@@ -6,11 +6,13 @@ network-bound helper that scrapes many races (manual use only).
 """
 import time
 import pandas as pd
+from keiba.relative_features import add_relative_features, RELATIVE_COLUMNS
 
-# Numeric feature columns the model trains on. `won` is the label.
-# Only PRE-race signals — last_3f / finish are race outcomes (would leak).
-FEATURE_COLUMNS = ["win_odds", "popularity", "age", "weight_carried",
-                   "body_weight"]
+# Absolute per-horse signals (PRE-race only; last_3f / finish would leak).
+BASE_FEATURE_COLUMNS = ["win_odds", "popularity", "age", "weight_carried",
+                        "body_weight"]
+# Full feature set the model trains on = absolute + within-race relative.
+FEATURE_COLUMNS = BASE_FEATURE_COLUMNS + RELATIVE_COLUMNS
 LABEL_COLUMN = "won"
 
 
@@ -20,9 +22,10 @@ def build_dataset(rows) -> pd.DataFrame:
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    df = df.dropna(subset=BASE_FEATURE_COLUMNS + [LABEL_COLUMN]).reset_index(drop=True)
+    df = add_relative_features(df)
     keep = FEATURE_COLUMNS + [LABEL_COLUMN, "race_id", "name"]
-    df = df[[c for c in keep if c in df.columns]]
-    return df.dropna(subset=FEATURE_COLUMNS + [LABEL_COLUMN]).reset_index(drop=True)
+    return df[[c for c in keep if c in df.columns]].reset_index(drop=True)
 
 
 def collect_dataset(race_ids, delay: float = 1.0) -> pd.DataFrame:
