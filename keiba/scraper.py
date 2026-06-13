@@ -1,3 +1,4 @@
+import re
 import requests
 from bs4 import BeautifulSoup
 from keiba.models import Race, Horse
@@ -7,39 +8,121 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (keiba-research)"}
 
 def fetch_html(url: str) -> str:
     # Network function - used manually only, not exercised by tests.
+    # netkeiba serves pages in EUC-JP; force it (apparent_encoding misdetects).
     resp = requests.get(url, headers=HEADERS, timeout=15)
     resp.raise_for_status()
-    resp.encoding = resp.apparent_encoding
+    resp.encoding = "EUC-JP"
     return resp.text
 
 
+def _to_float(text):
+    """Parse odds/weight strings; netkeiba shows '---.-' before a race."""
+    text = (text or "").strip()
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
+def _to_int(text):
+    text = (text or "").strip()
+    m = re.search(r"-?\d+", text)
+    return int(m.group()) if m else None
+
+
+def _parse_race_meta(soup):
+    """Extract race name and course info from the shutuba page header.
+
+    RaceData01 looks like: '15:40発走 / 芝2400m (左 C) / 天候:晴 / 馬場:良'
+    """
+    name_el = soup.select_one(".RaceName")
+    name = name_el.get_text(strip=True) if name_el else ""
+
+    surface, distance, turn, weather, condition = "", 0, "", "", ""
+    data_el = soup.select_one(".RaceData01")
+    if data_el:
+        text = data_el.get_text(" ", strip=True).replace("\xa0", " ")
+        m = re.search(r"(芝|ダ|障)\s*(\d+)m", text)
+        if m:
+            surface = m.group(1)
+            distance = int(m.group(2))
+        m = re.search(r"\((左|右|直)", text)
+        if m:
+            turn = m.group(1)
+        m = re.search(r"天候\s*[:：]\s*(\S+)", text)
+        if m:
+            weather = m.group(1)
+        m = re.search(r"馬場\s*[:：]\s*(\S+)", text)
+        if m:
+            condition = m.group(1)
+    return name, surface, distance, turn, weather, condition
+
+
+def _parse_body_weight(text):
+    """'524(-8)' -> (524, -8). Returns (None, None) if unavailable."""
+    m = re.match(r"(\d+)\(([+-]?\d+)\)", (text or "").strip())
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    return None, None
+
+
+def _parse_sex_age(text):
+    """'牡3' -> ('牡', 3)."""
+    text = (text or "").strip()
+    if not text:
+        return "", 0
+    sex = text[0]
+    age = _to_int(text[1:]) or 0
+    return sex, age
+
+
 def parse_race(html: str, race_id: str) -> Race:
+    """Parse a netkeiba shutuba (出馬表) page into a Race.
+
+    Verified against the real page structure of
+    https://race.netkeiba.com/race/shutuba.html?race_id=...
+    (table.Shutuba_Table > tr.HorseList). Cell index per row:
+      0=枠 1=馬番 3=馬名 4=性齢 5=斤量 6=騎手 7=厩舎 8=馬体重 9=単勝オッズ 10=人気
+    Note: 単勝オッズ/人気 are '---.-'/'**' until shortly before the race;
+    those parse to None. Past-成績・血統・調教 are not on this page and stay
+    empty here (collected separately from each horse's db.netkeiba page).
+    """
     soup = BeautifulSoup(html, "html.parser")
-    # NOTE: selectors below match our test fixture
-    # (tests/fixtures/race_sample.html). The real netkeiba page structure
-    # differs and MUST be verified/adjusted against an actual
-    # https://race.netkeiba.com/race/shutuba.html?race_id=... page before
-    # live use. Cell order expected per row:
-    # [number, name, sexage, weight_carried, jockey, win_odds, popularity]
+    name, surface, distance, turn, weather, condition = _parse_race_meta(soup)
+
     horses = []
-    for row in soup.select("table.shutuba tr.horse"):
-        cells = [c.get_text(strip=True) for c in row.select("td")]
-        if len(cells) < 6:
+    for row in soup.select("table.Shutuba_Table tr.HorseList"):
+        tds = row.select("td")
+        if len(tds) < 11:
             continue
-        sexage = cells[2]
+        name_a = tds[3].select_one("a")
+        horse_name = name_a.get_text(strip=True) if name_a else tds[3].get_text(strip=True)
+        sex, age = _parse_sex_age(tds[4].get_text(strip=True))
+        body_weight, body_weight_diff = _parse_body_weight(tds[8].get_text(strip=True))
         horses.append(Horse(
-            name=cells[1], sex=sexage[0], age=int(sexage[1:]),
-            weight_carried=float(cells[3]), jockey=cells[4],
-            post=int(cells[0]), number=int(cells[0]),
-            win_odds=float(cells[5]) if cells[5] else None,
-            popularity=int(cells[6]) if len(cells) > 6 and cells[6] else None,
-            body_weight=None, body_weight_diff=None, running_style=None,
-            sire=None, dam=None, broodmare_sire=None,
-            training_time=None, training_course=None, training_eval=None,
+            name=horse_name,
+            sex=sex,
+            age=age,
+            weight_carried=_to_float(tds[5].get_text(strip=True)),
+            jockey=tds[6].get_text(strip=True),
+            post=_to_int(tds[0].get_text(strip=True)),
+            number=_to_int(tds[1].get_text(strip=True)),
+            win_odds=_to_float(tds[9].get_text(strip=True)),
+            popularity=_to_int(tds[10].get_text(strip=True)),
+            body_weight=body_weight,
+            body_weight_diff=body_weight_diff,
+            running_style=None,
+            sire=None,
+            dam=None,
+            broodmare_sire=None,
+            training_time=None,
+            training_course=None,
+            training_eval=None,
             past_runs=[],
         ))
-    return Race(race_id=race_id, name="", date="", course="", distance=0,
-                surface="", turn="", track_condition="", weather="", horses=horses)
+    return Race(race_id=race_id, name=name, date="", course="", distance=distance,
+                surface=surface, turn=turn, track_condition=condition,
+                weather=weather, horses=horses)
 
 
 def scrape_race(race_id: str) -> Race:

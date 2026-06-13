@@ -1,31 +1,84 @@
-<!DOCTYPE html>
-<!--
-  Self-consistent fixture for the scraper test.
-  NOTE: This is NOT a real netkeiba page. The class names and table layout
-  here are designed to match keiba/scraper.py:parse_race. Before live use,
-  verify/adjust the selectors against an actual
-  https://race.netkeiba.com/race/shutuba.html?race_id=... page.
--->
-<html lang="ja">
-<head><meta charset="utf-8"><title>出馬表サンプル</title></head>
-<body>
-  <table class="shutuba">
-    <thead>
-      <tr>
-        <th>馬番</th><th>馬名</th><th>性齢</th><th>斤量</th>
-        <th>騎手</th><th>単勝</th><th>人気</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="horse">
-        <td>1</td><td>サンライズホープ</td><td>牡4</td><td>57.0</td>
-        <td>川田将雅</td><td>3.2</td><td>1</td>
-      </tr>
-      <tr class="horse">
-        <td>2</td><td>ミラクルスター</td><td>牝5</td><td>55.0</td>
-        <td>武豊</td><td>8.7</td><td>3</td>
-      </tr>
-    </tbody>
-  </table>
-</body>
-</html>
+<html><head><meta charset="utf-8"></head><body>
+<div class="RaceName">日本ダービー</div>
+<div class="RaceData01">15:40発走 / 芝2400m (左 C)
+/ 天候:晴 / 馬場:良</div>
+<table class="Shutuba_Table">
+<tr class="HorseList" id="tr_11">
+<td class="Waku1 Txt_C"><span>1</span></td>
+<td class="Umaban1 Txt_C">1</td>
+<td class="CheckMark Horse_Select">
+<select class="makeMeFancy_11" id="mark_11" name="11" style="display: none;">
+<option data-html-text="--" value="1_0">--</option><option data-html-text="◎" value="1_1">◎</option><option data-html-text="◯" value="1_2">◯</option><option data-html-text="▲" value="1_3">▲</option><option data-html-text="△" value="1_4">△</option><option data-html-text="☆" value="1_5">☆</option><option data-html-text="&amp;#10003" value="1_98">&amp;#10003</option><option data-html-text="消" value="1_99">消</option>
+</select>
+</td>
+<td class="HorseInfo">
+<div>
+<div>
+<span class="HorseName"><a href="https://db.netkeiba.com/horse/2021105560" target="_blank" title="サンライズアース">サンライズアース<img alt="" class="disp_none Favorite" id="myhorse_2021105560" src="https://cdn.netkeiba.com/img.race/common/img/icon/icon_horse.png?2019073001" width="18"/></a></span>
+<img class="disp_none horsebookmark myhorse_2021105560" id="myhorse1_2021105560" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png" width="20"/>
+</div>
+</div>
+</td>
+<td class="Barei Txt_C">牡3</td>
+<td class="Txt_C">57.0</td>
+<td class="Jockey">
+<a href="https://db.netkeiba.com/jockey/result/recent/01032/" target="_blank" title="池添"> 池添</a>
+</td>
+<td class="Trainer"><span class="Label2">栗東</span><a href="https://db.netkeiba.com/trainer/result/recent/01166/" target="_blank" title="石坂">石坂</a></td>
+<td class="Weight">
+524<small>(-8)</small>
+</td>
+<td class="Txt_R Popular"><span id="odds-1_01" style="font-weight : bold">---.-</span></td>
+<td class="Popular Popular_Ninki Txt_C">
+<span id="ninki-1_01">**</span>
+</td>
+<td class="FavRegist Txt_C">
+<a class="popup_link_04 cboxElement cboxElement_Nologin" href="https://db.sp.netkeiba.com?pid=horse_bookmark_add&amp;horse_id=2021105560&amp;rtn_url=https://race.netkeiba.com/race/shutuba.html?race_id=202405021211" title="お気に入り馬登録">
+<img class="horsebookmark myhorse1_2021105560" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png" width="18"/>
+<img class="disp_none horsebookmark myhorse_2021105560" id="myhorse1_2021105560" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png" width="18"/>
+</a>
+</td>
+<td class="FavMemo"><div><a class="popup_link_04 cboxElement" href="../popup/horse_bookmark.html?ketto_num=2021105560&amp;race_id=202405021211" id="Bamei_2021105560" title=""></a></div></td>
+<td class="Note0" id="note0_2021105560"><a class="Note_Inner" href="javascript:void(0);"><span class="Note_Text"></span><span class="NoteIcon">編集</span></a></td>
+<td class="Note1" id="note1_2021105560" style="display:none;"><a class="Note_Inner" href="javascript:void(0);"><span class="Note_Text"></span><span class="NoteIcon">編集</span></a></td>
+</tr>
+<tr class="HorseList" id="tr_17">
+<td class="Waku1 Txt_C"><span>1</span></td>
+<td class="Umaban1 Txt_C">2</td>
+<td class="CheckMark Horse_Select">
+<select class="makeMeFancy_17" id="mark_17" name="17" style="display: none;">
+<option data-html-text="--" value="2_0">--</option><option data-html-text="◎" value="2_1">◎</option><option data-html-text="◯" value="2_2">◯</option><option data-html-text="▲" value="2_3">▲</option><option data-html-text="△" value="2_4">△</option><option data-html-text="☆" value="2_5">☆</option><option data-html-text="&amp;#10003" value="2_98">&amp;#10003</option><option data-html-text="消" value="2_99">消</option>
+</select>
+</td>
+<td class="HorseInfo">
+<div>
+<div>
+<span class="HorseName"><a href="https://db.netkeiba.com/horse/2021105898" target="_blank" title="レガレイラ">レガレイラ<img alt="" class="disp_none Favorite" id="myhorse_2021105898" src="https://cdn.netkeiba.com/img.race/common/img/icon/icon_horse.png?2019073001" width="18"/></a></span>
+<img class="disp_none horsebookmark myhorse_2021105898" id="myhorse1_2021105898" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/horse_favorite_icon_pc.png" width="20"/>
+</div>
+</div>
+</td>
+<td class="Barei Txt_C">牝3</td>
+<td class="Txt_C">55.0</td>
+<td class="Jockey">
+<a href="https://db.netkeiba.com/jockey/result/recent/05339/" target="_blank" title="ルメール"> ルメール</a>
+</td>
+<td class="Trainer"><span class="Label1">美浦</span><a href="https://db.netkeiba.com/trainer/result/recent/01126/" target="_blank" title="木村">木村</a></td>
+<td class="Weight">
+458<small>(+2)</small>
+</td>
+<td class="Txt_R Popular"><span id="odds-1_02" style="font-weight : bold">---.-</span></td>
+<td class="Popular Popular_Ninki Txt_C">
+<span id="ninki-1_02">**</span>
+</td>
+<td class="FavRegist Txt_C">
+<a class="popup_link_04 cboxElement cboxElement_Nologin" href="https://db.sp.netkeiba.com?pid=horse_bookmark_add&amp;horse_id=2021105898&amp;rtn_url=https://race.netkeiba.com/race/shutuba.html?race_id=202405021211" title="お気に入り馬登録">
+<img class="horsebookmark myhorse1_2021105898" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_03.png" width="18"/>
+<img class="disp_none horsebookmark myhorse_2021105898" id="myhorse1_2021105898" onmouseout="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png'" onmouseover="this.src='https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png'" src="https://cdn.netkeiba.com/img.race/common/img/icon/prof_icon_favhorse_comp_04.png" width="18"/>
+</a>
+</td>
+<td class="FavMemo"><div><a class="popup_link_04 cboxElement" href="../popup/horse_bookmark.html?ketto_num=2021105898&amp;race_id=202405021211" id="Bamei_2021105898" title=""></a></div></td>
+<td class="Note0" id="note0_2021105898"><a class="Note_Inner" href="javascript:void(0);"><span class="Note_Text"></span><span class="NoteIcon">編集</span></a></td>
+<td class="Note1" id="note1_2021105898" style="display:none;"><a class="Note_Inner" href="javascript:void(0);"><span class="Note_Text"></span><span class="NoteIcon">編集</span></a></td>
+</tr>
+</table></body></html>
