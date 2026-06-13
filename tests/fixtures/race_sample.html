@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<!--
+  Self-consistent fixture for the scraper test.
+  NOTE: This is NOT a real netkeiba page. The class names and table layout
+  here are designed to match keiba/scraper.py:parse_race. Before live use,
+  verify/adjust the selectors against an actual
+  https://race.netkeiba.com/race/shutuba.html?race_id=... page.
+-->
+<html lang="ja">
+<head><meta charset="utf-8"><title>出馬表サンプル</title></head>
+<body>
+  <table class="shutuba">
+    <thead>
+      <tr>
+        <th>馬番</th><th>馬名</th><th>性齢</th><th>斤量</th>
+        <th>騎手</th><th>単勝</th><th>人気</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="horse">
+        <td>1</td><td>サンライズホープ</td><td>牡4</td><td>57.0</td>
+        <td>川田将雅</td><td>3.2</td><td>1</td>
+      </tr>
+      <tr class="horse">
+        <td>2</td><td>ミラクルスター</td><td>牝5</td><td>55.0</td>
+        <td>武豊</td><td>8.7</td><td>3</td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+</html>
