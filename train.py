@@ -2,7 +2,9 @@
 
 Usage:
     python train.py <race_id> [<race_id> ...]
-    python train.py --file race_ids.txt   # one race_id per line
+    python train.py --file race_ids.txt       # one race_id per line
+    python train.py --month 2024-05            # all races that month
+    python train.py --month 2024-01 2024-12    # a range of months (inclusive)
 
 Saves the trained model to model.pkl. Run main.py afterwards to use it.
 The more races you collect, the better the model — aim for hundreds.
@@ -10,9 +12,33 @@ The more races you collect, the better the model — aim for hundreds.
 import sys
 from keiba.dataset import collect_dataset
 from keiba.model import train_model, save_model, DEFAULT_MODEL_PATH
+from keiba.race_list import collect_race_ids
+
+
+def _months_in_range(start, end):
+    sy, sm = (int(x) for x in start.split("-"))
+    ey, em = (int(x) for x in end.split("-"))
+    y, m = sy, sm
+    while (y, m) <= (ey, em):
+        yield y, m
+        m += 1
+        if m > 12:
+            y, m = y + 1, 1
 
 
 def _read_ids(args):
+    if "--month" in args:
+        months = [a for a in args[args.index("--month") + 1:]
+                  if not a.startswith("--")]
+        if not months:
+            return []
+        start = months[0]
+        end = months[1] if len(months) > 1 else months[0]
+        ids = []
+        for year, month in _months_in_range(start, end):
+            print(f"  {year}-{month:02d} の開催レースID収集中...")
+            ids.extend(collect_race_ids(year, month))
+        return sorted(set(ids))
     if "--file" in args:
         path = args[args.index("--file") + 1]
         with open(path, encoding="utf-8") as f:
