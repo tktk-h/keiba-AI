@@ -14,6 +14,8 @@ def build_features(race: Race) -> pd.DataFrame:
             "name": h.name,
             "number": h.number,
             "win_odds": h.win_odds,
+            "popularity": h.popularity,
+            "body_weight": h.body_weight,
             "age": h.age,
             "weight_carried": h.weight_carried,
             "avg_finish": _avg(finishes),

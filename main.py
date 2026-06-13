@@ -1,8 +1,10 @@
+import os
 import sys
 from keiba.scraper import scrape_race
 from keiba.features import build_features
 from keiba.predictor import win_probabilities
 from keiba.recommend import recommend_bets
+from keiba.model import load_model, DEFAULT_MODEL_PATH
 
 
 def main(race_id: str, enrich: bool = False):
@@ -12,7 +14,13 @@ def main(race_id: str, enrich: bool = False):
     race = scrape_race(race_id, enrich=enrich)
     print(f"  {race.name} / {race.surface}{race.distance}m / {len(race.horses)}頭")
     df = build_features(race)
-    win_probs = win_probabilities(df)
+    model = None
+    if os.path.exists(DEFAULT_MODEL_PATH):
+        model = load_model(DEFAULT_MODEL_PATH)
+        print("  学習済みモデルで予測します。")
+    else:
+        print("  モデル未学習のためオッズベースで予測します(train.pyで学習可)。")
+    win_probs = win_probabilities(df, model=model)
     recs = recommend_bets(df, win_probs, top_n=5)
     print("\n=== 期待値の高い買い方 TOP5 ===")
     if not recs:

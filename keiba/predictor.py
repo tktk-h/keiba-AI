@@ -1,7 +1,14 @@
 from itertools import permutations
 
-def win_probabilities(df) -> dict:
-    """オッズベースの暫定勝率(1/odds を正規化)。"""
+def win_probabilities(df, model=None) -> dict:
+    """各馬の勝率を返す。
+
+    model を渡すと学習済みモデルで予測する(v2)。渡さなければ
+    オッズベースの暫定勝率(1/odds を正規化)にフォールバックする(v1)。
+    """
+    if model is not None:
+        from keiba.model import model_win_probabilities
+        return model_win_probabilities(model, df)
     raw = {}
     for _, row in df.iterrows():
         odds = row.get("win_odds")

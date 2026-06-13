@@ -3,5 +3,6 @@ __pycache__/
 .pytest_cache/
 *.json
 !docs/**/*.json
+*.pkl
 .venv/
 venv/
