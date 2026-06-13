@@ -36,6 +36,7 @@ class Horse:
     training_time: Optional[str]
     training_course: Optional[str]
     training_eval: Optional[str]
+    horse_id: Optional[str] = None
     past_runs: list = field(default_factory=list)
 
 @dataclass

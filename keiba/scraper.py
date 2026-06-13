@@ -1,7 +1,9 @@
 import re
+import time
 import requests
 from bs4 import BeautifulSoup
 from keiba.models import Race, Horse
+from keiba.horse_page import fetch_results, fetch_pedigree
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (keiba-research)"}
 
@@ -97,6 +99,11 @@ def parse_race(html: str, race_id: str) -> Race:
             continue
         name_a = tds[3].select_one("a")
         horse_name = name_a.get_text(strip=True) if name_a else tds[3].get_text(strip=True)
+        horse_id = None
+        if name_a and name_a.get("href"):
+            m = re.search(r"/horse/(\w+)", name_a["href"])
+            if m:
+                horse_id = m.group(1)
         sex, age = _parse_sex_age(tds[4].get_text(strip=True))
         body_weight, body_weight_diff = _parse_body_weight(tds[8].get_text(strip=True))
         horses.append(Horse(
@@ -118,6 +125,7 @@ def parse_race(html: str, race_id: str) -> Race:
             training_time=None,
             training_course=None,
             training_eval=None,
+            horse_id=horse_id,
             past_runs=[],
         ))
     return Race(race_id=race_id, name=name, date="", course="", distance=distance,
@@ -125,6 +133,27 @@ def parse_race(html: str, race_id: str) -> Race:
                 weather=weather, horses=horses)
 
 
-def scrape_race(race_id: str) -> Race:
+def enrich_horses(race: Race, limit: int = 5, delay: float = 1.0) -> Race:
+    """Fill each horse's past_runs and pedigree from db.netkeiba horse pages.
+
+    Network-bound (manual use only, not exercised by tests). A polite `delay`
+    between horse pages avoids hammering the site.
+    """
+    for horse in race.horses:
+        if not horse.horse_id:
+            continue
+        try:
+            horse.past_runs = fetch_results(horse.horse_id, limit=limit)
+            horse.sire, horse.dam, horse.broodmare_sire = fetch_pedigree(horse.horse_id)
+        except Exception as exc:  # noqa: BLE001 - keep going on a single failure
+            print(f"  ! {horse.name} の詳細取得に失敗: {exc}")
+        time.sleep(delay)
+    return race
+
+
+def scrape_race(race_id: str, enrich: bool = False) -> Race:
     url = f"https://race.netkeiba.com/race/shutuba.html?race_id={race_id}"
-    return parse_race(fetch_html(url), race_id)
+    race = parse_race(fetch_html(url), race_id)
+    if enrich:
+        enrich_horses(race)
+    return race
