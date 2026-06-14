@@ -33,6 +33,29 @@ def train_model(df, feature_columns=FEATURE_COLUMNS) -> Pipeline:
     return model
 
 
+def train_lgbm_model(df, feature_columns=FEATURE_COLUMNS):
+    """Fit a LightGBM gradient-boosting classifier on a dataset DataFrame.
+
+    Captures non-linear feature interactions the logistic model can't. Same
+    interface as train_model: stores feature_columns_ and exposes predict_proba.
+    """
+    from lightgbm import LGBMClassifier
+    X = df[feature_columns]
+    y = df[LABEL_COLUMN]
+    model = LGBMClassifier(
+        n_estimators=300,
+        learning_rate=0.05,
+        num_leaves=31,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        random_state=0,
+        verbose=-1,
+    )
+    model.fit(X, y)
+    model.feature_columns_ = list(feature_columns)
+    return model
+
+
 def save_model(model, path=DEFAULT_MODEL_PATH) -> None:
     Path(path).write_bytes(pickle.dumps(model))
 

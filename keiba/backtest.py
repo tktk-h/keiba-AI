@@ -76,17 +76,19 @@ def favorite_picks(test: pd.DataFrame) -> dict:
 
 def run_backtest(df: pd.DataFrame, test_fraction: float = 0.2,
                  min_ev: float = 1.0, stake: float = 100,
-                 feature_columns=None) -> dict:
+                 feature_columns=None, trainer=train_model) -> dict:
     """Train on older races, evaluate model vs favorite baseline on newer.
 
     feature_columns: optional override of the model's feature set (e.g. to add
     form features for an experiment). Defaults to the dataset's FEATURE_COLUMNS.
+    trainer: training function to use (e.g. train_lgbm_model). Defaults to the
+    logistic-regression train_model.
     """
     train, test = time_split(df, test_fraction)
     if feature_columns is None:
-        model = train_model(train)
+        model = trainer(train)
     else:
-        model = train_model(train, feature_columns=feature_columns)
+        model = trainer(train, feature_columns=feature_columns)
 
     model_result = simulate_win_bets(test, model_picks(model, test, min_ev), stake)
     fav_result = simulate_win_bets(test, favorite_picks(test), stake)
