@@ -13,13 +13,16 @@ def _rows():
         # favorite wins
         rows.append(dict(race_id=f"r{race}", name=f"fav{race}", finish=1, won=1,
                          sex="牡", age=4, win_odds=2.0, popularity=1,
-                         weight_carried=55.0, last_3f=33.0, body_weight=480))
+                         weight_carried=55.0, last_3f=33.0, body_weight=480,
+                         distance=1600, surface="芝", track_condition="良"))
         rows.append(dict(race_id=f"r{race}", name=f"mid{race}", finish=2, won=0,
                          sex="牡", age=4, win_odds=8.0, popularity=5,
-                         weight_carried=55.0, last_3f=34.5, body_weight=470))
+                         weight_carried=55.0, last_3f=34.5, body_weight=470,
+                         distance=1600, surface="芝", track_condition="良"))
         rows.append(dict(race_id=f"r{race}", name=f"out{race}", finish=3, won=0,
                          sex="牡", age=4, win_odds=30.0, popularity=12,
-                         weight_carried=55.0, last_3f=36.0, body_weight=460))
+                         weight_carried=55.0, last_3f=36.0, body_weight=460,
+                         distance=1600, surface="芝", track_condition="良"))
     return rows
 
 
@@ -43,9 +46,11 @@ def test_train_and_predict_favorite_highest():
     model = train_model(df)
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
-         "weight_carried": 55.0, "body_weight": 480},
+         "weight_carried": 55.0, "body_weight": 480,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
         {"race_id": "t", "name": "B", "win_odds": 30.0, "popularity": 12, "age": 4,
-         "weight_carried": 55.0, "body_weight": 460},
+         "weight_carried": 55.0, "body_weight": 460,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
     ]))
     probs = model_win_probabilities(model, race)
     assert abs(sum(probs.values()) - 1.0) < 1e-6
@@ -58,9 +63,11 @@ def test_lgbm_train_and_predict_favorite_highest():
     assert model.feature_columns_ == FEATURE_COLUMNS
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
-         "weight_carried": 55.0, "body_weight": 480},
+         "weight_carried": 55.0, "body_weight": 480,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
         {"race_id": "t", "name": "B", "win_odds": 30.0, "popularity": 12, "age": 4,
-         "weight_carried": 55.0, "body_weight": 460},
+         "weight_carried": 55.0, "body_weight": 460,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
     ]))
     probs = model_win_probabilities(model, race)
     assert abs(sum(probs.values()) - 1.0) < 1e-6
@@ -75,9 +82,11 @@ def test_save_and_load_model(tmp_path):
     loaded = load_model(path)
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
-         "weight_carried": 55.0, "body_weight": 480},
+         "weight_carried": 55.0, "body_weight": 480,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
         {"race_id": "t", "name": "B", "win_odds": 9.0, "popularity": 6, "age": 4,
-         "weight_carried": 55.0, "body_weight": 470},
+         "weight_carried": 55.0, "body_weight": 470,
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
     ]))
     X = race[FEATURE_COLUMNS]
     probs = loaded.predict_proba(X)

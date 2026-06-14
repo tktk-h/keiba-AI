@@ -36,3 +36,10 @@ def test_won_flag_only_for_first():
     rows = _rows()
     assert rows[0]["won"] == 1
     assert all(r["won"] == 0 for r in rows[1:])
+
+
+def test_parse_race_meta_fields():
+    for row in _rows():
+        assert row["surface"] == "芝"
+        assert row["distance"] == 2400
+        assert row["track_condition"] == "良"

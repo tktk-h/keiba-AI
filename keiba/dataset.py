@@ -8,10 +8,12 @@ import time
 import pandas as pd
 from keiba.relative_features import add_relative_features, RELATIVE_COLUMNS
 from keiba.form_features import add_form_features, FORM_COLUMNS
+from keiba.race_conditions import encode_surface, encode_track_condition
 
 # Absolute per-horse signals (PRE-race only; last_3f / finish would leak).
 BASE_FEATURE_COLUMNS = ["win_odds", "popularity", "age", "weight_carried",
-                        "body_weight"]
+                        "body_weight", "distance", "surface_turf",
+                        "track_condition_score"]
 # Full feature set the model trains on = absolute + within-race relative.
 FEATURE_COLUMNS = BASE_FEATURE_COLUMNS + RELATIVE_COLUMNS
 LABEL_COLUMN = "won"
@@ -28,6 +30,8 @@ def build_dataset(rows) -> pd.DataFrame:
     df = pd.DataFrame(rows)
     if df.empty:
         return df
+    df["surface_turf"] = df["surface"].map(encode_surface)
+    df["track_condition_score"] = df["track_condition"].map(encode_track_condition)
     df = df.dropna(subset=BASE_FEATURE_COLUMNS + [LABEL_COLUMN]).reset_index(drop=True)
     df = add_relative_features(df)
     df = add_form_features(df)

@@ -1,6 +1,7 @@
 import pandas as pd
 from keiba.models import Race
 from keiba.relative_features import add_relative_features
+from keiba.race_conditions import encode_surface, encode_track_condition
 
 def _avg(values):
     nums = [v for v in values if v is not None]
@@ -24,6 +25,9 @@ def build_features(race: Race) -> pd.DataFrame:
             "best_finish": min(finishes) if finishes else None,
             "avg_last_3f": _avg(last3f),
             "n_past_runs": len(h.past_runs),
+            "distance": race.distance,
+            "surface_turf": encode_surface(race.surface),
+            "track_condition_score": encode_track_condition(race.track_condition),
         })
     df = pd.DataFrame(rows)
     # Add within-race relative features when the inputs are present, so the

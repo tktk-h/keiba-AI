@@ -23,3 +23,14 @@ def test_build_features_columns_and_rows():
     a = df[df["name"] == "A"].iloc[0]
     b = df[df["name"] == "B"].iloc[0]
     assert a["avg_finish"] < b["avg_finish"]
+
+
+def test_build_features_race_condition_columns():
+    race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
+                surface="芝", turn="右", track_condition="良", weather="晴",
+                horses=[_horse("A", 2.0, [1, 2, 1])])
+    df = build_features(race)
+    row = df.iloc[0]
+    assert row["distance"] == 1600
+    assert row["surface_turf"] == 1
+    assert row["track_condition_score"] == 0

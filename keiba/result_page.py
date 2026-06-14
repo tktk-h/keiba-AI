@@ -40,8 +40,25 @@ def _sex_age(text):
     return text[0], _to_int(text[1:])
 
 
+def _parse_race_meta(soup):
+    """Extract surface/distance/track_condition from the race-data block,
+    e.g. "11 R 第91回東京優駿(GI) 芝右2400m / 天候 : 晴 / 芝 : 良 / 発走 : 15:40"."""
+    el = soup.select_one("dl.racedata") or soup.select_one(".data_intro")
+    text = el.get_text(" ", strip=True) if el else ""
+    surface = distance = track_condition = None
+    m = re.search(r"(芝|ダ|障)(左|右|直)?(\d+)m", text)
+    if m:
+        surface = m.group(1)
+        distance = int(m.group(3))
+    m = re.search(r"(芝|ダート|障)\s*[:：]\s*(\S+?)\s*/", text)
+    if m:
+        track_condition = m.group(2)
+    return surface, distance, track_condition
+
+
 def parse_result_page(html: str, race_id: str):
     soup = BeautifulSoup(html, "html.parser")
+    surface, distance, track_condition = _parse_race_meta(soup)
     table = soup.select_one("table.race_table_01")
     if table is None:
         return []
@@ -74,6 +91,9 @@ def parse_result_page(html: str, race_id: str):
             "win_odds": _to_float(tds[16].get_text(strip=True)),
             "popularity": _to_int(tds[17].get_text(strip=True)),
             "body_weight": int(body.group(1)) if body else None,
+            "surface": surface,
+            "distance": distance,
+            "track_condition": track_condition,
         })
     return rows
 
