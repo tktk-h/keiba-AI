@@ -1,5 +1,6 @@
 import pandas as pd
 from keiba.dataset import build_dataset, FEATURE_COLUMNS
+from keiba.form_features import FORM_COLUMNS
 from keiba.model import (train_model, train_lgbm_model, save_model, load_model,
                          model_win_probabilities)
 from keiba.relative_features import add_relative_features
@@ -27,6 +28,14 @@ def test_build_dataset_shape():
     assert len(df) == 120
     assert "won" in df.columns
     assert "win_odds" in df.columns
+
+
+def test_build_dataset_includes_form_columns_excludes_leakage():
+    df = build_dataset(_rows())
+    for col in FORM_COLUMNS:
+        assert col in df.columns
+    assert "finish" not in df.columns
+    assert "last_3f" not in df.columns
 
 
 def test_train_and_predict_favorite_highest():

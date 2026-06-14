@@ -6,13 +6,13 @@ def _df():
     # Same horse "A" runs 3 times (chronological by race_id); "B" runs once.
     return pd.DataFrame([
         {"race_id": "202301010101", "name": "A", "won": 1,
-         "popularity": 1, "win_odds": 2.0},
+         "popularity": 1, "win_odds": 2.0, "finish": 1, "last_3f": 33.0},
         {"race_id": "202301010101", "name": "B", "won": 0,
-         "popularity": 3, "win_odds": 5.0},
+         "popularity": 3, "win_odds": 5.0, "finish": 5, "last_3f": 35.0},
         {"race_id": "202302010101", "name": "A", "won": 0,
-         "popularity": 2, "win_odds": 4.0},
+         "popularity": 2, "win_odds": 4.0, "finish": 3, "last_3f": 34.0},
         {"race_id": "202303010101", "name": "A", "won": 1,
-         "popularity": 1, "win_odds": 3.0},
+         "popularity": 1, "win_odds": 3.0, "finish": 1, "last_3f": 33.5},
     ])
 
 
@@ -48,3 +48,16 @@ def test_no_lookahead_on_first_run():
                   (out["race_id"] == "202301010101")].iloc[0]
     assert first_a["prev_runs"] == 0
     assert first_a["prev_win_rate"] == 0.0
+
+
+def test_prev_avg_finish_and_last3f_exclude_current_race():
+    out = add_form_features(_df()).sort_values(["name", "race_id"]).reset_index(drop=True)
+    a = out[out["name"] == "A"].reset_index(drop=True)
+    # Run1: no history -> 0. Run2: avg of run1 (finish=1, last_3f=33.0).
+    # Run3: avg of run1+run2 (finish 1&3 -> 2.0, last_3f 33.0&34.0 -> 33.5).
+    assert a.loc[0, "prev_avg_finish"] == 0.0
+    assert a.loc[0, "prev_avg_last3f"] == 0.0
+    assert a.loc[1, "prev_avg_finish"] == 1.0
+    assert a.loc[1, "prev_avg_last3f"] == 33.0
+    assert a.loc[2, "prev_avg_finish"] == 2.0
+    assert a.loc[2, "prev_avg_last3f"] == 33.5
