@@ -16,15 +16,20 @@ from keiba.dataset import FEATURE_COLUMNS, LABEL_COLUMN
 DEFAULT_MODEL_PATH = "model.pkl"
 
 
-def train_model(df) -> Pipeline:
-    """Fit a logistic-regression pipeline on a dataset DataFrame."""
-    X = df[FEATURE_COLUMNS]
+def train_model(df, feature_columns=FEATURE_COLUMNS) -> Pipeline:
+    """Fit a logistic-regression pipeline on a dataset DataFrame.
+
+    The chosen feature_columns are stored on the model so prediction uses the
+    exact same set it was trained on.
+    """
+    X = df[feature_columns]
     y = df[LABEL_COLUMN]
     model = Pipeline([
         ("scaler", StandardScaler()),
         ("clf", LogisticRegression(max_iter=1000)),
     ])
     model.fit(X, y)
+    model.feature_columns_ = list(feature_columns)
     return model
 
 
@@ -39,16 +44,17 @@ def load_model(path=DEFAULT_MODEL_PATH):
 def model_win_probabilities(model, df) -> dict:
     """Predict normalized win probabilities for one race's feature DataFrame.
 
-    df must contain FEATURE_COLUMNS and a 'name' column. Rows missing any
+    Uses the model's own feature_columns_ (set at training). Rows missing any
     feature get a raw score of 0. Result sums to 1 (uniform if all zero).
     """
+    feature_columns = getattr(model, "feature_columns_", FEATURE_COLUMNS)
     scores = {}
     for _, row in df.iterrows():
-        feats = [row.get(c) for c in FEATURE_COLUMNS]
+        feats = [row.get(c) for c in feature_columns]
         if any(v is None or (isinstance(v, float) and v != v) for v in feats):
             scores[row["name"]] = 0.0
             continue
-        X = pd.DataFrame([feats], columns=FEATURE_COLUMNS)
+        X = pd.DataFrame([feats], columns=feature_columns)
         prob_win = model.predict_proba(X)[0][1]
         scores[row["name"]] = float(prob_win)
     total = sum(scores.values())
