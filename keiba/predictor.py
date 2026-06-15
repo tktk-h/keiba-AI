@@ -65,3 +65,21 @@ def quinella_probabilities(win: dict, top_n: int = 12) -> dict:
         key = tuple(sorted((a, b)))
         out[key] = out.get(key, 0.0) + p
     return out
+
+
+def wide_probabilities(win: dict, top_n: int = 12) -> dict:
+    """ワイド: 2頭がともに上位3着に入る確率(順不同)。キーは昇順タプル。
+
+    上位3着の順列を列挙し、その集合に含まれる各ペアへ確率を加算する。
+    """
+    names = _candidate_names(win, top_n)
+    total = sum(win.values())
+    out = {}
+    for a, b, c in permutations(names, 3):
+        p = ((win[a] / total)
+             * (win[b] / (total - win[a]))
+             * (win[c] / (total - win[a] - win[b])))
+        for x, y in ((a, b), (a, c), (b, c)):
+            key = tuple(sorted((x, y)))
+            out[key] = out.get(key, 0.0) + p
+    return out
