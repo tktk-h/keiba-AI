@@ -43,3 +43,8 @@ def test_parse_race_meta_fields():
         assert row["surface"] == "芝"
         assert row["distance"] == 2400
         assert row["track_condition"] == "良"
+
+
+def test_parse_result_page_horse_number():
+    # 馬番(td[2])。勝ち馬ダノンデサイルは5番。
+    assert _rows()[0]["number"] == 5

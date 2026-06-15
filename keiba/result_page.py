@@ -81,6 +81,7 @@ def parse_result_page(html: str, race_id: str):
         rows.append({
             "race_id": race_id,
             "horse_id": horse_id,
+            "number": _to_int(tds[2].get_text(strip=True)),  # 馬番
             "name": name_a.get_text(strip=True) if name_a else tds[3].get_text(strip=True),
             "finish": finish,
             "won": 1 if finish == 1 else 0,
