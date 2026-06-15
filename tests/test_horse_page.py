@@ -24,6 +24,7 @@ def test_parse_results_returns_past_runs():
     assert first.popularity == 8
     assert first.weight_carried == 58.0
     assert first.jockey == "池添謙一"
+    assert first.win_odds == 33.4
 
 
 def test_parse_results_time_in_seconds():

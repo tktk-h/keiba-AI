@@ -2,7 +2,7 @@
 
 - Results: https://db.netkeiba.com/horse/result/<horse_id>/
   table.db_h_race_results, column indices (verified against a real page):
-    0=日付 1=開催 4=レース名 10=人気 11=着順 12=騎手 13=斤量
+    0=日付 1=開催 4=レース名 9=単勝オッズ 10=人気 11=着順 12=騎手 13=斤量
     14=距離(芝2400) 16=馬場 18=タイム(2:23.0) 27=上り(上がり3F)
 - Pedigree: https://db.netkeiba.com/horse/ped/<horse_id>/
   table.blood_table; td[rowspan=16] = 父/母, td[rowspan=8][2] = 母父.
@@ -94,6 +94,7 @@ def parse_results(html: str, limit: int = 5):
             weight_carried=_to_float(text[13]),
             jockey=text[12],
             race_class=_race_class(text[4]),
+            win_odds=_to_float(text[9]),
         ))
         if len(runs) >= limit:
             break

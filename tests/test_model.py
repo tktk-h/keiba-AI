@@ -47,10 +47,14 @@ def test_train_and_predict_favorite_highest():
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
          "weight_carried": 55.0, "body_weight": 480,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
         {"race_id": "t", "name": "B", "win_odds": 30.0, "popularity": 12, "age": 4,
          "weight_carried": 55.0, "body_weight": 460,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
     ]))
     probs = model_win_probabilities(model, race)
     assert abs(sum(probs.values()) - 1.0) < 1e-6
@@ -64,10 +68,14 @@ def test_lgbm_train_and_predict_favorite_highest():
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
          "weight_carried": 55.0, "body_weight": 480,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
         {"race_id": "t", "name": "B", "win_odds": 30.0, "popularity": 12, "age": 4,
          "weight_carried": 55.0, "body_weight": 460,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
     ]))
     probs = model_win_probabilities(model, race)
     assert abs(sum(probs.values()) - 1.0) < 1e-6
@@ -83,10 +91,14 @@ def test_save_and_load_model(tmp_path):
     race = add_relative_features(pd.DataFrame([
         {"race_id": "t", "name": "A", "win_odds": 2.0, "popularity": 1, "age": 4,
          "weight_carried": 55.0, "body_weight": 480,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
         {"race_id": "t", "name": "B", "win_odds": 9.0, "popularity": 6, "age": 4,
          "weight_carried": 55.0, "body_weight": 470,
-         "distance": 1600, "surface_turf": 1, "track_condition_score": 0},
+         "distance": 1600, "surface_turf": 1, "track_condition_score": 0,
+         "prev_runs": 3, "prev_win_rate": 0.3, "prev_avg_popularity": 3.0,
+         "prev_avg_log_odds": 1.5, "prev_avg_finish": 3.0, "prev_avg_last3f": 34.0},
     ]))
     X = race[FEATURE_COLUMNS]
     probs = loaded.predict_proba(X)

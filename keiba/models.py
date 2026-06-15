@@ -15,6 +15,7 @@ class PastRun:
     weight_carried: Optional[float]
     jockey: Optional[str]
     race_class: Optional[str]
+    win_odds: Optional[float] = None
 
 @dataclass
 class Horse:

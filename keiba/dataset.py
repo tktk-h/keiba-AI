@@ -14,8 +14,10 @@ from keiba.race_conditions import encode_surface, encode_track_condition
 BASE_FEATURE_COLUMNS = ["win_odds", "popularity", "age", "weight_carried",
                         "body_weight", "distance", "surface_turf",
                         "track_condition_score"]
-# Full feature set the model trains on = absolute + within-race relative.
-FEATURE_COLUMNS = BASE_FEATURE_COLUMNS + RELATIVE_COLUMNS
+# Full feature set the model trains on = absolute + within-race relative +
+# past-performance (form) aggregates. FORM is computable on the live side too
+# (keiba.features._form_from_past_runs), so parity holds end to end.
+FEATURE_COLUMNS = BASE_FEATURE_COLUMNS + RELATIVE_COLUMNS + FORM_COLUMNS
 LABEL_COLUMN = "won"
 
 
@@ -35,7 +37,7 @@ def build_dataset(rows) -> pd.DataFrame:
     df = df.dropna(subset=BASE_FEATURE_COLUMNS + [LABEL_COLUMN]).reset_index(drop=True)
     df = add_relative_features(df)
     df = add_form_features(df)
-    keep = FEATURE_COLUMNS + FORM_COLUMNS + [LABEL_COLUMN, "race_id", "name"]
+    keep = FEATURE_COLUMNS + [LABEL_COLUMN, "race_id", "name"]
     return df[[c for c in keep if c in df.columns]].reset_index(drop=True)
 
 

@@ -1,13 +1,41 @@
+import math
 import pandas as pd
 from keiba.models import Race
 from keiba.relative_features import add_relative_features
 from keiba.race_conditions import encode_surface, encode_track_condition
+from keiba.form_features import FORM_COLUMNS
 
 def _avg(values):
     nums = [v for v in values if v is not None]
     return sum(nums) / len(nums) if nums else None
 
+
+def _form_from_past_runs(past_runs, last3f_fill):
+    """Aggregate a horse's prior runs into FORM_COLUMNS, mirroring the
+    training-side add_form_features (means over prior races; first-timers
+    get prev_runs=0 and neutral 0.0 rates)."""
+    n = len(past_runs)
+    if n == 0:
+        return {c: 0.0 for c in FORM_COLUMNS}  # prev_runs becomes 0.0
+    wins = [1 if r.finish == 1 else 0 for r in past_runs]
+    logodds = [math.log(max(r.win_odds, 1.0))
+               for r in past_runs if r.win_odds is not None]
+    l3 = [(r.last_3f if r.last_3f is not None else last3f_fill) for r in past_runs]
+    return {
+        "prev_runs": n,
+        "prev_win_rate": sum(wins) / n,
+        "prev_avg_popularity": _avg([r.popularity for r in past_runs]) or 0.0,
+        "prev_avg_log_odds": sum(logodds) / len(logodds) if logodds else 0.0,
+        "prev_avg_finish": _avg([r.finish for r in past_runs]) or 0.0,
+        "prev_avg_last3f": sum(l3) / len(l3),
+    }
+
 def build_features(race: Race) -> pd.DataFrame:
+    # Field-wide mean of last_3f to fill missing values before averaging,
+    # matching add_form_features (0 would skew toward "very fast").
+    all_l3 = [r.last_3f for h in race.horses for r in h.past_runs
+              if r.last_3f is not None]
+    last3f_fill = sum(all_l3) / len(all_l3) if all_l3 else 0.0
     rows = []
     for h in race.horses:
         finishes = [r.finish for r in h.past_runs]
@@ -28,6 +56,7 @@ def build_features(race: Race) -> pd.DataFrame:
             "distance": race.distance,
             "surface_turf": encode_surface(race.surface),
             "track_condition_score": encode_track_condition(race.track_condition),
+            **_form_from_past_runs(h.past_runs, last3f_fill),
         })
     df = pd.DataFrame(rows)
     # Add within-race relative features when the inputs are present, so the

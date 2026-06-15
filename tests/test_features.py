@@ -34,3 +34,35 @@ def test_build_features_race_condition_columns():
     assert row["distance"] == 1600
     assert row["surface_turf"] == 1
     assert row["track_condition_score"] == 0
+
+
+def test_build_features_form_columns_from_past_runs():
+    from keiba.form_features import FORM_COLUMNS
+    race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
+                surface="芝", turn="右", track_condition="良", weather="晴",
+                horses=[_horse("A", 2.0, [1, 2, 1])])
+    row = build_features(race).iloc[0]
+    for c in FORM_COLUMNS:
+        assert c in row
+    assert row["prev_runs"] == 3
+    assert abs(row["prev_win_rate"] - 2 / 3) < 1e-9   # finishes 1,2,1 -> 2 wins
+    assert abs(row["prev_avg_finish"] - 4 / 3) < 1e-9
+    assert row["prev_avg_last3f"] == 33.5
+
+
+def test_build_features_form_log_odds_and_first_timer():
+    race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
+                surface="芝", turn="右", track_condition="良", weather="晴",
+                horses=[_horse("A", 2.0, [1, 2]), _horse("B", 9.0, [])])
+    # give A's past runs known odds -> mean log odds
+    import math
+    for r in race.horses[0].past_runs:
+        r.win_odds = 4.0
+    df = build_features(race)
+    a = df[df["name"] == "A"].iloc[0]
+    b = df[df["name"] == "B"].iloc[0]
+    assert abs(a["prev_avg_log_odds"] - math.log(4.0)) < 1e-9
+    # first-time runner -> neutral zeros
+    assert b["prev_runs"] == 0
+    assert b["prev_avg_log_odds"] == 0.0
+    assert b["prev_win_rate"] == 0.0
