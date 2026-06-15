@@ -23,20 +23,39 @@ def _pair_key(s: str):
 
 
 def parse_odds(sample: dict) -> dict:
-    """整形済みJSON -> {'place':{int:(lo,hi)}, 'quinella':{(a,b):float}, 'wide':...}。
+    """整形済みJSON -> {'win':{int:float}, 'place':{int:(lo,hi)},
+    'quinella':{(a,b):float}, 'wide':{(a,b):float}}。
 
     sample の値は数値文字列(カンマ除去済み)を前提とする(_extract_* が整形)。
     """
+    win = {int(k): float(v) for k, v in sample.get("win", {}).items()}
     place = {int(k): (float(v[0]), float(v[1]))
              for k, v in sample.get("place", {}).items()}
     quinella = {_pair_key(k): float(v) for k, v in sample.get("quinella", {}).items()}
     wide = {_pair_key(k): float(v) for k, v in sample.get("wide", {}).items()}
-    return {"place": place, "quinella": quinella, "wide": wide}
+    return {"win": win, "place": place, "quinella": quinella, "wide": wide}
 
 
 def _clean(s) -> str:
     """'2,612.8' -> '2612.8'。"""
     return str(s).replace(",", "")
+
+
+def _extract_win(raw: dict) -> dict:
+    """type=1 生レスポンス -> {'馬番': 'オッズ'}(単勝、block "1")。取消馬は除外。"""
+    block = raw.get("data", {}).get("odds", {}).get("1", {})
+    out = {}
+    for num, vals in block.items():
+        if not isinstance(vals, list) or not vals:
+            continue
+        v = _clean(vals[0])
+        try:
+            if float(v) < 0:
+                continue
+        except ValueError:
+            continue
+        out[num] = v
+    return out
 
 
 def _extract_place(raw: dict) -> dict:
@@ -82,9 +101,11 @@ def _get(race_id: str, type_: int) -> dict:
 
 
 def fetch_odds(race_id: str) -> dict:
-    """実APIから複勝(type1)/馬連(type4)/ワイド(type5)を取得し整形する。"""
+    """実APIから単勝・複勝(type1)/馬連(type4)/ワイド(type5)を取得し整形する。"""
+    raw1 = _get(race_id, 1)   # 単勝(block "1") と 複勝(block "2") を含む
     sample = {
-        "place": _extract_place(_get(race_id, 1)),
+        "win": _extract_win(raw1),
+        "place": _extract_place(raw1),
         "quinella": _extract_pairs(_get(race_id, 4), "4"),
         "wide": _extract_pairs(_get(race_id, 5), "5"),
     }

@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
-from keiba.odds_page import parse_odds, _extract_place, _extract_pairs
+from keiba.odds_page import (parse_odds, _extract_win, _extract_place,
+                             _extract_pairs)
 
 
 def _sample():
@@ -16,6 +17,22 @@ def test_parse_odds_shapes():
     assert odds["wide"][(1, 2)] == 2.5
     # キーは昇順正規化
     assert all(a < b for (a, b) in odds["quinella"])
+
+
+def test_extract_win_from_block1_skips_scratched():
+    # type=1 の block "1" が単勝 [odds, "0.0", 人気]
+    raw = {"data": {"odds": {"1": {
+        "01": ["2.2", "0.0", "1"],
+        "02": ["1,250.9", "0.0", "16"],
+        "16": ["-2.0", "0.0", "9999"],
+    }}}}
+    out = _extract_win(raw)
+    assert out["01"] == "2.2"
+    assert out["02"] == "1250.9"
+    assert "16" not in out
+    # parse_odds で int キー / float に
+    parsed = parse_odds({"win": out})
+    assert parsed["win"][1] == 2.2
 
 
 def test_extract_place_skips_scratched_and_strips_commas():

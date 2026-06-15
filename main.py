@@ -15,6 +15,26 @@ def main(race_id: str, enrich: bool = False):
     race = scrape_race(race_id, enrich=enrich)
     print(f"  {race.name} / {race.surface}{race.distance}m / {len(race.horses)}頭")
 
+    # オッズを先に取得。出馬表に単勝オッズが無い場合(締め切り後など)は
+    # 確定オッズ(=締め切り直前の価格)で各馬を補完してからモデルにかける。
+    try:
+        odds = fetch_odds(race_id)
+    except Exception as exc:  # noqa: BLE001
+        print(f"  (オッズ取得に失敗: {exc})")
+        odds = {"win": {}, "place": {}, "quinella": {}, "wide": {}}
+    filled = 0
+    for h in race.horses:
+        if h.win_odds is None and odds["win"].get(h.number) is not None:
+            h.win_odds = odds["win"][h.number]
+            filled += 1
+    # 人気は単勝オッズの順位(出馬表に無い=締め切り後なら確定オッズ順で補完)
+    runners = [h for h in race.horses if h.win_odds is not None]
+    if runners and all(h.popularity is None for h in race.horses):
+        for rank, h in enumerate(sorted(runners, key=lambda x: x.win_odds), 1):
+            h.popularity = rank
+    if filled:
+        print(f"  確定オッズで単勝 {filled}頭ぶんを補完しました(締め切り直前を再現)。")
+
     df = build_features(race)
     model = None
     if os.path.exists(DEFAULT_MODEL_PATH):
@@ -31,12 +51,7 @@ def main(race_id: str, enrich: bool = False):
         print(f"{i:>2}. {r['name']:<12} 勝率{r['win_prob']:5.1%} "
               f"複勝{pp:>6} 確信度{r['level']}({r['confidence']:.2f})")
 
-    # ② EV提案(単勝/複勝/ワイド/馬連)
-    try:
-        odds = fetch_odds(race_id)
-    except Exception as exc:  # noqa: BLE001
-        print(f"\n(オッズ取得に失敗: {exc} — 単勝のみで提案します)")
-        odds = {"place": {}, "quinella": {}, "wide": {}}
+    # ② EV提案(単勝/複勝/ワイド/馬連)— オッズは上で取得済み
     bets, any_positive = recommend_all(race, win_probs, odds, top_n=8)
     print("\n=== ② EV提案(期待値の高い買い方) ===")
     if not bets:
