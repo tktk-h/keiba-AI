@@ -35,6 +35,15 @@ def test_predict_ranking_sorted_with_fields():
     assert top["level"] in ("低", "中", "高")
 
 
+def test_predict_ranking_confidence_varies_across_horses():
+    # モデル確率を均等にし、市場(オッズ)とのズレ具合を馬ごとに変える
+    race = _race(8)            # win_odds = 2.0, 3.0, ... と差がある
+    win = {h.name: 1.0 / 8 for h in race.horses}
+    rows = predict_ranking(race, win)
+    confidences = {r["confidence"] for r in rows}
+    assert len(confidences) > 1     # 全馬一律ではなく、馬ごとに差がつく
+
+
 from keiba.recommend import recommend_all
 
 

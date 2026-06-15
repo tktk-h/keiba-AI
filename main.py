@@ -53,7 +53,9 @@ def main(race_id: str, enrich: bool = False):
 
     # ② EV提案(単勝/複勝/ワイド/馬連)— オッズは上で取得済み
     bets, any_positive = recommend_all(race, win_probs, odds, top_n=8)
-    print("\n=== ② EV提案(期待値の高い買い方) ===")
+    print("\n=== ② 買い目のEV(参考・優位性は未確認) ===")
+    print("※ 250レースのバックテストでは控除率を越える優位性は確認されていません"
+          "(回収率~75%)。EVは目安です。")
     if not bets:
         if not any(odds.get(k) for k in ("win", "place", "quinella", "wide")):
             print("(オッズ未確定のため計算できません。レース直前のIDを指定してください)")

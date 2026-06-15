@@ -30,10 +30,25 @@ def confidence(data_runs: int, sharpness: float,
         robust = min(max(hit_prob, 0.0) / 0.05, 1.0)   # 5%以上で満点
         score = 0.6 * base + 0.4 * robust
     score = round(score, 3)
+    return score, _level(score)
+
+
+def prediction_confidence(prev_runs: int, agreement: float, field_ok: bool):
+    """①予想(各馬)の確信度: データ量 × モデルと市場の一致度 × 頭数の妥当性。
+
+    「市場に勝てる自信」ではなく『この推定値の確からしさ』。統計モデルと市場
+    (オッズ)が一致する馬ほど高く、過去走データが薄い/両者が食い違う馬ほど低い。
+    """
+    data = min(max(prev_runs, 0), 6) / 6.0
+    agree = min(max(agreement, 0.0), 1.0)
+    field = 1.0 if field_ok else 0.7
+    score = round(0.35 * data + 0.5 * agree + 0.15 * field, 3)
+    return score, _level(score)
+
+
+def _level(score: float) -> str:
     if score >= 0.66:
-        level = "高"
-    elif score >= 0.40:
-        level = "中"
-    else:
-        level = "低"
-    return score, level
+        return "高"
+    if score >= 0.40:
+        return "中"
+    return "低"

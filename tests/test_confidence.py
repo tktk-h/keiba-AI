@@ -1,4 +1,4 @@
-from keiba.confidence import confidence
+from keiba.confidence import confidence, prediction_confidence
 
 
 def test_confidence_high_when_rich_data_and_sharp():
@@ -27,3 +27,16 @@ def test_confidence_low_hit_prob_penalized():
     lo, _ = confidence(5, 1.0, True, True, hit_prob=0.002)   # 極小確率の穴
     assert hi == base          # 5%以上は満点扱いで減点なし
     assert lo < hi             # 極小確率はEV推定が脆く、確信度が下がる
+
+
+def test_prediction_confidence_higher_when_model_agrees_with_market():
+    hi, hi_level = prediction_confidence(prev_runs=6, agreement=1.0, field_ok=True)
+    lo, _ = prediction_confidence(prev_runs=6, agreement=0.0, field_ok=True)
+    assert hi > lo             # モデルと市場が一致する馬ほど高い
+    assert hi_level == "高"
+
+
+def test_prediction_confidence_rewards_data():
+    rich, _ = prediction_confidence(prev_runs=6, agreement=0.5, field_ok=True)
+    thin, _ = prediction_confidence(prev_runs=0, agreement=0.5, field_ok=True)
+    assert rich > thin

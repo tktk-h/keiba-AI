@@ -1,7 +1,8 @@
+import math
 from keiba.expected_value import win_ev, ev
 from keiba.predictor import (place_k, place_probabilities,
                              quinella_probabilities, wide_probabilities)
-from keiba.confidence import confidence
+from keiba.confidence import confidence, prediction_confidence
 
 
 def _runs_by_name(race):
@@ -20,18 +21,29 @@ def _field_ok(race):
     return 5 <= len(race.horses) <= 18
 
 
+def _agreement(model_p: float, market_p: float) -> float:
+    """モデル勝率と市場インプライド勝率の一致度 0–1(3倍ズレで0)。"""
+    if model_p <= 0 or market_p <= 0:
+        return 0.0
+    return max(0.0, 1.0 - abs(math.log(model_p / market_p)) / math.log(3.0))
+
+
 def predict_ranking(race, win_probs: dict) -> list:
-    """全馬を推定勝率順に、複勝率・確信度つきで返す(①予想)。"""
+    """全馬を推定勝率順に、複勝率・確信度つきで返す(①予想)。
+
+    確信度は馬ごとに、過去走データ量と『モデルと市場(オッズ)の一致度』で決まる。
+    """
     runs = _runs_by_name(race)
-    sharp = _race_sharpness(win_probs)
     fok = _field_ok(race)
     k = place_k(len(race.horses))
     place = place_probabilities(win_probs, k) if k else {}
-    odds_ok = {h.name: (h.win_odds is not None) for h in race.horses}
+    inv = {h.name: 1.0 / h.win_odds for h in race.horses if h.win_odds}
+    z = sum(inv.values())
+    market = {n: v / z for n, v in inv.items()} if z else {}
     rows = []
     for name, p in sorted(win_probs.items(), key=lambda kv: kv[1], reverse=True):
-        score, level = confidence(runs.get(name, 0), sharp,
-                                   odds_ok.get(name, False), fok)
+        agree = _agreement(p, market.get(name, 0.0))
+        score, level = prediction_confidence(runs.get(name, 0), agree, fok)
         rows.append({"name": name, "win_prob": p,
                      "place_prob": place.get(name), "confidence": score,
                      "level": level})
