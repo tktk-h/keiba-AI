@@ -30,3 +30,12 @@ def test_wide_ge_quinella():
         assert w[pair] >= q[pair] - 1e-12
     for v in w.values():
         assert 0.0 <= v <= 1.0 + 1e-12
+
+
+def test_degenerate_distribution_does_not_crash():
+    # 1頭が勝率100%(分母が0になりうる)でも例外を出さない
+    win = {"A": 1.0, "B": 0.0, "C": 0.0}
+    q = quinella_probabilities(win)
+    w = wide_probabilities(win)
+    assert all(0.0 <= v <= 1.0 + 1e-12 for v in q.values())
+    assert all(0.0 <= v <= 1.0 + 1e-12 for v in w.values())

@@ -61,7 +61,10 @@ def quinella_probabilities(win: dict, top_n: int = 12) -> dict:
     total = sum(win.values())
     out = {}
     for a, b in permutations(names, 2):
-        p = (win[a] / total) * (win[b] / (total - win[a]))
+        d1 = total - win[a]
+        if total <= 0 or d1 <= 0:   # degenerate distribution -> 0 contribution
+            continue
+        p = (win[a] / total) * (win[b] / d1)
         key = tuple(sorted((a, b)))
         out[key] = out.get(key, 0.0) + p
     return out
@@ -76,9 +79,11 @@ def wide_probabilities(win: dict, top_n: int = 12) -> dict:
     total = sum(win.values())
     out = {}
     for a, b, c in permutations(names, 3):
-        p = ((win[a] / total)
-             * (win[b] / (total - win[a]))
-             * (win[c] / (total - win[a] - win[b])))
+        d1 = total - win[a]
+        d2 = total - win[a] - win[b]
+        if total <= 0 or d1 <= 0 or d2 <= 0:   # degenerate -> 0 contribution
+            continue
+        p = (win[a] / total) * (win[b] / d1) * (win[c] / d2)
         for x, y in ((a, b), (a, c), (b, c)):
             key = tuple(sorted((x, y)))
             out[key] = out.get(key, 0.0) + p
