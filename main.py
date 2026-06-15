@@ -44,12 +44,13 @@ def main(race_id: str, enrich: bool = False):
         print("  モデル未学習のためオッズベースで予測します(train.pyで学習可)。")
     win_probs = win_probabilities(df, model=model)
 
-    # ① 統計ベース予想(全馬)
-    print("\n=== ① 予想(統計ベース・確信度つき) ===")
+    # ① 統計ベース予想(全馬)— モデル予想 vs 市場(妙味)つき
+    print("\n=== ① 予想(モデル vs 市場・妙味つき) ===")
+    print("  予想=モデル勝率 / 市場=オッズが示す勝率 / 妙味=モデルが人気より高評価")
     for i, r in enumerate(predict_ranking(race, win_probs), 1):
         pp = f"{r['place_prob']:.1%}" if r["place_prob"] is not None else "—"
-        print(f"{i:>2}. {r['name']:<12} 勝率{r['win_prob']:5.1%} "
-              f"複勝{pp:>6} 確信度{r['level']}({r['confidence']:.2f})")
+        print(f"{i:>2}. {r['name']:<11} 予想{r['win_prob']:5.1%} 市場{r['market_prob']:5.1%} "
+              f"{r['value']:<5}複勝{pp:>6} 確信{r['level']}")
 
     # ② EV提案(単勝/複勝/ワイド/馬連)— オッズは上で取得済み
     bets, any_positive = recommend_all(race, win_probs, odds, top_n=8)

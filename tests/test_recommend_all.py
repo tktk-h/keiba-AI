@@ -44,6 +44,25 @@ def test_predict_ranking_confidence_varies_across_horses():
     assert len(confidences) > 1     # 全馬一律ではなく、馬ごとに差がつく
 
 
+def test_value_tag_buy_and_overbet():
+    from keiba.recommend import _value_tag
+    assert _value_tag(0.30, 0.20) == "妙味"        # モデル >> 市場
+    assert _value_tag(0.10, 0.20) == "過剰人気"     # モデル << 市場
+    assert _value_tag(0.20, 0.20) == "互角"
+    assert _value_tag(0.20, 0.0) == "—"            # 市場オッズ無し
+
+
+def test_predict_ranking_includes_value_vs_market():
+    race = _race(8)            # win_odds に傾斜あり
+    win = {h.name: 1.0 / 8 for h in race.horses}   # モデルは均等
+    rows = predict_ranking(race, win)
+    assert "market_prob" in rows[0] and "value" in rows[0]
+    tags = {r["value"] for r in rows}
+    # 均等モデル vs 傾斜市場 → 1番人気は過剰人気、人気薄は妙味になる
+    assert "妙味" in tags
+    assert "過剰人気" in tags
+
+
 from keiba.recommend import recommend_all
 
 

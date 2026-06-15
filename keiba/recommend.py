@@ -28,6 +28,23 @@ def _agreement(model_p: float, market_p: float) -> float:
     return max(0.0, 1.0 - abs(math.log(model_p / market_p)) / math.log(3.0))
 
 
+VALUE_FACTOR = 1.3   # モデルが市場より1.3倍以上高い/低いと妙味/過剰人気
+
+
+def _value_tag(model_p: float, market_p: float) -> str:
+    """モデルと市場の勝率を比べ、妙味/過剰人気/互角 を返す。
+
+    利益を保証するものではなく『モデルが人気より高く(低く)見ている馬』の目印。
+    """
+    if model_p <= 0 or market_p <= 0:
+        return "—"
+    if model_p >= market_p * VALUE_FACTOR:
+        return "妙味"
+    if model_p * VALUE_FACTOR <= market_p:
+        return "過剰人気"
+    return "互角"
+
+
 def predict_ranking(race, win_probs: dict) -> list:
     """全馬を推定勝率順に、複勝率・確信度つきで返す(①予想)。
 
@@ -42,10 +59,12 @@ def predict_ranking(race, win_probs: dict) -> list:
     market = {n: v / z for n, v in inv.items()} if z else {}
     rows = []
     for name, p in sorted(win_probs.items(), key=lambda kv: kv[1], reverse=True):
-        agree = _agreement(p, market.get(name, 0.0))
+        mp = market.get(name, 0.0)
+        agree = _agreement(p, mp)
         score, level = prediction_confidence(runs.get(name, 0), agree, fok)
         rows.append({"name": name, "win_prob": p,
-                     "place_prob": place.get(name), "confidence": score,
+                     "place_prob": place.get(name), "market_prob": mp,
+                     "value": _value_tag(p, mp), "confidence": score,
                      "level": level})
     return rows
 
