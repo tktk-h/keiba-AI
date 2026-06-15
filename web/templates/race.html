@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ r.meta.name }}</title>
+<style>body{font-family:sans-serif;margin:1rem;max-width:760px}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{border:1px solid #ddd;padding:4px 6px;text-align:right}
+td.l,th.l{text-align:left}.tag{font-weight:bold}
+.note{color:#888;font-size:12px}a{color:#0366d6}</style></head>
+<body>
+<p><a href="/">← レース一覧</a></p>
+<h1>{{ r.meta.name }}
+<small>{{ r.meta.surface }}{{ r.meta.distance }}m / {{ r.meta.field_size }}頭</small></h1>
+
+<h2>① 予想(モデル vs 市場・妙味)</h2>
+<table>
+<tr><th class="l">馬</th><th>予想</th><th>市場</th><th>妙味</th><th>複勝</th><th>確信</th></tr>
+{% for p in r.predictions %}
+<tr><td class="l">{{ p.name }}</td>
+<td>{{ '%.1f%%'|format(p.win_prob*100) }}</td>
+<td>{{ '%.1f%%'|format(p.market_prob*100) }}</td>
+<td class="tag">{{ p.value }}</td>
+<td>{% if p.place_prob is not none %}{{ '%.1f%%'|format(p.place_prob*100) }}{% else %}—{% endif %}</td>
+<td>{{ p.level }}</td></tr>
+{% endfor %}
+</table>
+
+<h2>② 買い目のEV(参考・優位性は未確認)</h2>
+<p class="note">250レースのバックテストで控除率を越える優位性は確認されていません
+(回収率~75%)。EVは目安です。</p>
+{% if not r.bets %}<p>推奨できる買い目はありません。</p>{% else %}
+<table>
+<tr><th class="l">券種</th><th class="l">買い目</th><th>オッズ</th><th>推定</th><th>EV</th><th>確信</th></tr>
+{% for b in r.bets %}
+<tr><td class="l">{{ b.type }}</td><td class="l">{{ b.sel }}</td>
+<td>{{ b.odds }}</td>
+<td>{{ '%.1f%%'|format(b.prob*100) }}</td>
+<td>{{ '%+.2f'|format(b.ev) }}</td>
+<td>{{ b.level }}</td></tr>
+{% endfor %}
+</table>{% endif %}
+</body></html>

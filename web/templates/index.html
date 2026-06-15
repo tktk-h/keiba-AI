@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>競馬予想</title>
+<style>body{font-family:sans-serif;margin:1rem;max-width:720px}
+a.card{display:block;padding:.6rem;border:1px solid #ccc;border-radius:6px;
+margin:.25rem 0;text-decoration:none;color:#0366d6}
+h2{margin-top:1.5rem}</style></head>
+<body>
+<h1>本日のレース</h1>
+{% if not venues %}
+<p>本日の開催はありません(URL に <code>?date=YYYYMMDD</code> で日付指定も可)。</p>
+{% endif %}
+{% for venue, cards in venues.items() %}
+<h2>{{ venue }}</h2>
+{% for c in cards %}
+<a class="card" href="/race/{{ c.race_id }}">{{ c.number }}R{% if c.name %} {{ c.name }}{% endif %}</a>
+{% endfor %}
+{% endfor %}
+</body></html>
