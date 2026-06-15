@@ -1,4 +1,5 @@
 from keiba.predictor import place_k
+from keiba.predictor import quinella_probabilities
 
 
 def test_place_k_rules():
@@ -8,3 +9,13 @@ def test_place_k_rules():
     assert place_k(5) == 2
     assert place_k(4) is None
     assert place_k(1) is None
+
+
+def test_quinella_probabilities_basic():
+    win = {"A": 0.5, "B": 0.3, "C": 0.2}
+    q = quinella_probabilities(win)
+    assert set(q.keys()) == {("A", "B"), ("A", "C"), ("B", "C")}
+    assert abs(sum(q.values()) - 1.0) < 1e-9
+    expected_ab = (0.5 * 0.3) / (1 - 0.5) + (0.3 * 0.5) / (1 - 0.3)
+    assert abs(q[("A", "B")] - expected_ab) < 1e-9
+    assert q[("A", "B")] == max(q.values())
