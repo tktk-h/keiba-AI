@@ -66,3 +66,13 @@ def test_build_features_form_log_odds_and_first_timer():
     assert b["prev_runs"] == 0
     assert b["prev_avg_log_odds"] == 0.0
     assert b["prev_win_rate"] == 0.0
+
+
+def test_build_features_handles_none_finish_in_past_runs():
+    # 中止/除外の過去走は finish=None。min()/平均でクラッシュしないこと。
+    race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
+                surface="芝", turn="右", track_condition="良", weather="晴",
+                horses=[_horse("A", 3.0, [None, 2, 1])])
+    row = build_features(race).iloc[0]
+    assert row["best_finish"] == 1          # None は無視
+    assert row["n_past_runs"] == 3

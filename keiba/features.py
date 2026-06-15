@@ -38,7 +38,7 @@ def build_features(race: Race) -> pd.DataFrame:
     last3f_fill = sum(all_l3) / len(all_l3) if all_l3 else 0.0
     rows = []
     for h in race.horses:
-        finishes = [r.finish for r in h.past_runs]
+        finishes = [r.finish for r in h.past_runs if r.finish is not None]
         last3f = [r.last_3f for r in h.past_runs]
         rows.append({
             "race_id": race.race_id,
