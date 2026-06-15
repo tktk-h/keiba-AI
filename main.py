@@ -55,7 +55,10 @@ def main(race_id: str, enrich: bool = False):
     bets, any_positive = recommend_all(race, win_probs, odds, top_n=8)
     print("\n=== ② EV提案(期待値の高い買い方) ===")
     if not bets:
-        print("(オッズ未確定のため計算できません。レース直前のIDを指定してください)")
+        if not any(odds.get(k) for k in ("win", "place", "quinella", "wide")):
+            print("(オッズ未確定のため計算できません。レース直前のIDを指定してください)")
+        else:
+            print("推奨できる買い目はありません(確率・確信度が基準を満たす候補なし)。")
         return
     if not any_positive:
         print("※ +EVの買い目はありません。今レースは見送り推奨(以下は参考)。")

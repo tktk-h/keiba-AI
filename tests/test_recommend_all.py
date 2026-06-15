@@ -65,3 +65,17 @@ def test_recommend_all_negative_when_low_odds():
     bets, any_positive = recommend_all(race, win, odds, top_n=5)
     assert any_positive is False
     assert len(bets) >= 1
+
+
+def test_recommend_all_filters_microscopic_longshot_pairs():
+    race = _race(8)
+    probs = [0.7, 0.15, 0.06, 0.04, 0.02, 0.015, 0.01, 0.005]
+    win = {h.name: probs[i] for i, h in enumerate(race.horses)}
+    # 7-8番(超低確率)に高オッズ=計算上は+EVだが当選確率は0.01%程度
+    odds = {"place": {}, "quinella": {(7, 8): 800.0}, "wide": {}}
+    bets, _ = recommend_all(race, win, odds, top_n=20)
+    assert "7-8" not in [b["sel"] for b in bets]      # フィルタで除外
+    # しきい値を外せば候補には挙がる(=除外したのはフィルタだと確認)
+    bets_raw, _ = recommend_all(race, win, odds, top_n=20,
+                                min_prob=0.0, min_confidence=0.0)
+    assert "7-8" in [b["sel"] for b in bets_raw]

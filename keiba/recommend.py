@@ -61,10 +61,13 @@ def _num2name(race):
     return {h.number: h.name for h in race.horses}
 
 
-def recommend_all(race, win_probs: dict, odds: dict, top_n: int = 8):
+def recommend_all(race, win_probs: dict, odds: dict, top_n: int = 8,
+                  min_prob: float = 0.02, min_confidence: float = 0.40):
     """単勝/複勝/ワイド/馬連を券種横断でEV順に並べ、(bets, any_positive)を返す。
 
-    +EV(ev>=0)が無くても、最良候補は必ず返す(全レースで予想を提示)。
+    当選確率が min_prob 未満、または確信度が min_confidence 未満の買い目は
+    推奨から除外する(極小確率の穴連系のような、EV推定が脆い買い目を出さない)。
+    フィルタ後に候補が無ければ空リストを返す。
     """
     runs = _runs_by_name(race)
     sharp = _race_sharpness(win_probs)
@@ -78,22 +81,23 @@ def recommend_all(race, win_probs: dict, odds: dict, top_n: int = 8):
 
     bets = []
 
+    def _add(bet_type, sel, p, o, data_runs):
+        if p is None or o is None or p < min_prob:
+            return
+        cs, lv = confidence(data_runs, sharp, True, fok, hit_prob=p)
+        if cs < min_confidence:
+            return
+        bets.append({"type": bet_type, "sel": sel, "prob": p, "odds": o,
+                     "ev": ev(p, o), "confidence": cs, "level": lv})
+
     for name, p in win_probs.items():
-        o = win_odds.get(name)
-        if o:
-            cs, lv = confidence(runs.get(name, 0), sharp, True, fok)
-            bets.append({"type": "単勝", "sel": name, "prob": p, "odds": o,
-                         "ev": ev(p, o), "confidence": cs, "level": lv})
+        _add("単勝", name, p, win_odds.get(name), runs.get(name, 0))
 
     for num, lohi in odds.get("place", {}).items():
         name = num2name.get(num)
-        p = place.get(name)
-        if name is None or p is None:
+        if name is None:
             continue
-        lo = lohi[0]
-        cs, lv = confidence(runs.get(name, 0), sharp, True, fok)
-        bets.append({"type": "複勝", "sel": name, "prob": p, "odds": lo,
-                     "ev": ev(p, lo), "confidence": cs, "level": lv})
+        _add("複勝", name, place.get(name), lohi[0], runs.get(name, 0))
 
     for kind, probmap, oddsmap in (("馬連", quin, odds.get("quinella", {})),
                                    ("ワイド", wide, odds.get("wide", {}))):
@@ -101,13 +105,8 @@ def recommend_all(race, win_probs: dict, odds: dict, top_n: int = 8):
             a, b = num2name.get(na), num2name.get(nb)
             if a is None or b is None:
                 continue
-            p = probmap.get(tuple(sorted((a, b))))
-            if p is None:
-                continue
-            dr = min(runs.get(a, 0), runs.get(b, 0))
-            cs, lv = confidence(dr, sharp, True, fok)
-            bets.append({"type": kind, "sel": f"{na}-{nb}", "prob": p, "odds": o,
-                         "ev": ev(p, o), "confidence": cs, "level": lv})
+            _add(kind, f"{na}-{nb}", probmap.get(tuple(sorted((a, b)))), o,
+                 min(runs.get(a, 0), runs.get(b, 0)))
 
     bets.sort(key=lambda b: (b["ev"], b["confidence"]), reverse=True)
     any_positive = any(b["ev"] >= 0 for b in bets)
