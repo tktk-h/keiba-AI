@@ -1,5 +1,13 @@
 from itertools import permutations
 
+def place_k(field_size: int):
+    """JRA複勝の着内頭数: 8頭以上=3, 5-7頭=2, 4頭以下=None(複勝なし)。"""
+    if field_size >= 8:
+        return 3
+    if field_size >= 5:
+        return 2
+    return None
+
 def win_probabilities(df, model=None) -> dict:
     """各馬の勝率を返す。
 
