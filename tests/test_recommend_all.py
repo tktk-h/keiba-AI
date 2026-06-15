@@ -33,3 +33,35 @@ def test_predict_ranking_sorted_with_fields():
     assert 0.0 <= top["place_prob"] <= 1.0
     assert top["place_prob"] >= top["win_prob"]
     assert top["level"] in ("低", "中", "高")
+
+
+from keiba.recommend import recommend_all
+
+
+def test_recommend_all_ranks_by_ev_and_flags_positive():
+    race = _race(8)
+    win = {h.name: (8 - i) / 36.0 for i, h in enumerate(race.horses)}
+    race.horses[0].win_odds = 99.0
+    odds = {
+        "place": {1: (1.5, 1.8)},
+        "quinella": {(1, 2): 5.0},
+        "wide": {(1, 2): 2.5},
+    }
+    bets, any_positive = recommend_all(race, win, odds, top_n=10)
+    assert any_positive is True
+    evs = [b["ev"] for b in bets]
+    assert evs == sorted(evs, reverse=True)
+    assert {b["type"] for b in bets} == {"単勝", "複勝", "馬連", "ワイド"}
+    for b in bets:
+        assert b["level"] in ("低", "中", "高")
+
+
+def test_recommend_all_negative_when_low_odds():
+    race = _race(8)
+    win = {h.name: (8 - i) / 36.0 for i, h in enumerate(race.horses)}
+    for h in race.horses:
+        h.win_odds = 1.1
+    odds = {"place": {}, "quinella": {}, "wide": {}}
+    bets, any_positive = recommend_all(race, win, odds, top_n=5)
+    assert any_positive is False
+    assert len(bets) >= 1
