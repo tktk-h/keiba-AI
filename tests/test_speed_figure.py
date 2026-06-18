@@ -3,6 +3,35 @@ from keiba.speed_figure import (build_baselines, condition_offsets,
                                 speed_figure, horse_speed_rating)
 
 BASE = {("芝", 2000): (120.0, 2.0)}  # mean 120s, std 2s
+NAN = float("nan")
+
+
+def test_speed_figure_none_when_time_nan():
+    assert speed_figure(NAN, "芝", 2000, BASE) is None
+
+
+def test_build_baselines_ignores_nan_times():
+    recs = [{"surface": "芝", "distance": 2000, "time": 120.0},
+            {"surface": "芝", "distance": 2000, "time": 122.0},
+            {"surface": "芝", "distance": 2000, "time": NAN}]
+    mean, std = build_baselines(recs, min_samples=2)[("芝", 2000)]
+    assert mean == 121.0  # NaN ignored, not averaged in
+    assert std == 1.0
+
+
+def test_condition_offsets_ignores_nan_times():
+    recs = [{"surface": "芝", "distance": 2000, "time": 120.0, "track_condition": "良"},
+            {"surface": "芝", "distance": 2000, "time": 122.0, "track_condition": "良"},
+            {"surface": "芝", "distance": 2000, "time": NAN, "track_condition": "重"},
+            {"surface": "芝", "distance": 2000, "time": 126.0, "track_condition": "重"}]
+    off = condition_offsets(recs)
+    assert off["重"] == 5.0  # 重 mean 126 (NaN ignored) - 良 mean 121
+
+
+def test_horse_speed_rating_skips_nan_time_runs():
+    runs = [{"time": NAN, "surface": "芝", "distance": 2000, "track_condition": "良"},
+            {"time": 122.0, "surface": "芝", "distance": 2000, "track_condition": "良"}]
+    assert horse_speed_rating(runs, BASE, n=2) == 40.0
 
 
 def test_speed_figure_at_baseline_mean_equals_base():

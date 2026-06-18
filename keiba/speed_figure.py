@@ -20,6 +20,17 @@ def _get(run, key):
     return getattr(run, key, None)
 
 
+def _num(x):
+    """Coerce to float, treating None and NaN (e.g. missing CSV cells) as None."""
+    if x is None:
+        return None
+    try:
+        x = float(x)
+    except (TypeError, ValueError):
+        return None
+    return None if x != x else x  # NaN != NaN
+
+
 def _std(values, mean):
     """Population standard deviation (ddof=0), matching relative_features."""
     return (sum((v - mean) ** 2 for v in values) / len(values)) ** 0.5
@@ -34,11 +45,11 @@ def build_baselines(records, min_samples=5):
     """
     buckets = {}
     for r in records:
-        t = _get(r, "time")
+        t = _num(_get(r, "time"))
         if t is None:
             continue
         key = (_get(r, "surface"), _get(r, "distance"))
-        buckets.setdefault(key, []).append(float(t))
+        buckets.setdefault(key, []).append(t)
     out = {}
     for key, times in buckets.items():
         if len(times) < min_samples:
@@ -58,12 +69,12 @@ def condition_offsets(records):
     # bucket -> condition -> [times]
     grid = {}
     for r in records:
-        t = _get(r, "time")
+        t = _num(_get(r, "time"))
         if t is None:
             continue
         key = (_get(r, "surface"), _get(r, "distance"))
         cond = _get(r, "track_condition")
-        grid.setdefault(key, {}).setdefault(cond, []).append(float(t))
+        grid.setdefault(key, {}).setdefault(cond, []).append(t)
 
     diffs = {}  # condition -> [offset per bucket]
     for conds in grid.values():
@@ -91,6 +102,7 @@ def speed_figure(time, surface, distance, baselines, track_condition=None,
     Returns None when the time is missing, there is no baseline for the
     (surface, distance), or the baseline std is zero.
     """
+    time = _num(time)
     if time is None:
         return None
     stats = baselines.get((surface, distance))
@@ -99,7 +111,7 @@ def speed_figure(time, surface, distance, baselines, track_condition=None,
     mean, std = stats
     if std == 0:
         return None
-    adj = float(time)
+    adj = time
     if offsets and track_condition in offsets:
         adj -= offsets[track_condition]
     return base + scale * (mean - adj) / std
