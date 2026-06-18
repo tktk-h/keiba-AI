@@ -33,6 +33,20 @@ def _to_int(text):
     return int(m.group()) if m else None
 
 
+def _time_to_seconds(text):
+    """'2:24.3' -> 144.3 ; '57.3' -> 57.3 ; '' -> None."""
+    text = (text or "").strip()
+    if not text:
+        return None
+    if ":" in text:
+        minutes, rest = text.split(":", 1)
+        try:
+            return int(minutes) * 60 + float(rest)
+        except ValueError:
+            return None
+    return _to_float(text)
+
+
 def _sex_age(text):
     text = (text or "").strip()
     if not text:
@@ -88,6 +102,7 @@ def parse_result_page(html: str, race_id: str):
             "sex": sex,
             "age": age,
             "weight_carried": _to_float(tds[5].get_text(strip=True)),
+            "time": _time_to_seconds(tds[7].get_text(strip=True)),
             "last_3f": _to_float(tds[15].get_text(strip=True)),
             "win_odds": _to_float(tds[16].get_text(strip=True)),
             "popularity": _to_int(tds[17].get_text(strip=True)),
