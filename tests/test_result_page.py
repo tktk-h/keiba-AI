@@ -48,3 +48,11 @@ def test_parse_race_meta_fields():
 def test_parse_result_page_horse_number():
     # 馬番(td[2])。勝ち馬ダノンデサイルは5番。
     assert _rows()[0]["number"] == 5
+
+
+def test_parse_result_page_time_seconds():
+    # タイム(td[7])を秒に変換: '2:24.3' -> 144.3。
+    rows = _rows()
+    assert rows[0]["time"] == 144.3
+    assert rows[1]["time"] == 144.7
+    assert rows[2]["time"] == 144.9
