@@ -1,42 +1,127 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{ r.meta.name }}</title>
-<style>body{font-family:sans-serif;margin:1rem;max-width:760px}
-table{border-collapse:collapse;width:100%;font-size:14px}
-th,td{border:1px solid #ddd;padding:4px 6px;text-align:right}
-td.l,th.l{text-align:left}.tag{font-weight:bold}
-.note{color:#888;font-size:12px}a{color:#0366d6}</style></head>
-<body>
+<title>予想ダッシュボード</title>
+<style>
+:root{--ink:#1a1a1a;--mut:#777;--line:#e2e2e2;--up-bg:#E1F5EE;--up-fg:#0F6E56;
+--dn-bg:#FAECE7;--dn-fg:#993C1D;--ev-bg:#f4f4f2}
+*{box-sizing:border-box}
+body{font-family:system-ui,sans-serif;margin:0;color:var(--ink);
+font-size:14px;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:640px;margin:0 auto;padding:12px 12px 40px}
+a{color:#0366d6;text-decoration:none}
+h1{font-size:17px;font-weight:600;margin:6px 0 2px}
+.sub{color:var(--mut);font-size:12px}
+.note{color:var(--mut);font-size:12px;margin:6px 2px}
+table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px}
+th{color:var(--mut);font-size:11px;font-weight:500;padding:6px 2px}
+td{padding:8px 2px;border-top:.5px solid var(--line);text-align:right}
+th.l,td.l{text-align:left;padding-left:4px}
+.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0366d6}
+.badge{display:inline-block;min-width:24px;padding:1px 5px;border-radius:6px;
+font-size:11px;font-weight:600;text-align:center;background:#eee;color:#888}
+.b-up{background:var(--up-bg);color:var(--up-fg)}
+.b-dn{background:var(--dn-bg);color:var(--dn-fg)}
+.card{background:#fff;border:.5px solid #ccc;border-radius:12px;padding:12px 14px;margin:4px 0 8px}
+.metrics{display:flex;gap:10px;margin:10px 0}
+.metric{flex:1;background:var(--ev-bg);border-radius:8px;padding:8px 10px}
+.metric .k{font-size:11px;color:var(--mut)}
+.metric .v{font-size:20px;font-weight:600}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:12px;padding:3px 9px;border-radius:6px}
+.c-up{background:var(--up-bg);color:var(--up-fg)}
+.c-dn{background:var(--dn-bg);color:var(--dn-fg)}
+.spin{width:26px;height:26px;border:3px solid #ddd;border-top-color:#0366d6;
+border-radius:50%;animation:r 0.8s linear infinite;margin:40px auto 12px}
+@keyframes r{to{transform:rotate(360deg)}}
+.center{text-align:center;color:var(--mut)}
+details{margin-top:14px}summary{cursor:pointer;font-size:14px;font-weight:600}
+.bet{font-size:13px;padding:6px 2px;border-top:.5px solid var(--line);
+display:flex;justify-content:space-between;gap:8px}
+</style></head>
+<body><div class="wrap">
 <p><a href="/">← レース一覧</a></p>
-<h1>{{ r.meta.name }}
-<small>{{ r.meta.surface }}{{ r.meta.distance }}m / {{ r.meta.field_size }}頭</small></h1>
+<div id="app">
+  <div class="spin"></div>
+  <p class="center">予想を計算中…(各馬の過去成績を取得しています)</p>
+</div>
+</div>
 
-<h2>① 予想(モデル vs 市場・妙味)</h2>
-<table>
-<tr><th class="l">馬</th><th>予想</th><th>市場</th><th>妙味</th><th>複勝</th><th>確信</th></tr>
-{% for p in r.predictions %}
-<tr><td class="l">{{ p.name }}</td>
-<td>{{ '%.1f%%'|format(p.win_prob*100) }}</td>
-<td>{{ '%.1f%%'|format(p.market_prob*100) }}</td>
-<td class="tag">{{ p.value }}</td>
-<td>{% if p.place_prob is not none %}{{ '%.1f%%'|format(p.place_prob*100) }}{% else %}—{% endif %}</td>
-<td>{{ p.level }}</td></tr>
-{% endfor %}
-</table>
+<script>
+const DATA_URL = "/race/{{ race_id }}/data";
+const pct = x => (x == null ? "—" : Math.round(x * 100) + "%");
+const sgn = s => s > 0 ? "+" + s : "" + s;
+const bcls = s => s > 0 ? "b-up" : (s < 0 ? "b-dn" : "");
 
-<h2>② 買い目のEV(参考・優位性は未確認)</h2>
-<p class="note">250レースのバックテストで控除率を越える優位性は確認されていません
-(回収率~75%)。EVは目安です。</p>
-{% if not r.bets %}<p>推奨できる買い目はありません。</p>{% else %}
-<table>
-<tr><th class="l">券種</th><th class="l">買い目</th><th>オッズ</th><th>推定</th><th>EV</th><th>確信</th></tr>
-{% for b in r.bets %}
-<tr><td class="l">{{ b.type }}</td><td class="l">{{ b.sel }}</td>
-<td>{{ b.odds }}</td>
-<td>{{ '%.1f%%'|format(b.prob*100) }}</td>
-<td>{{ '%+.2f'|format(b.ev) }}</td>
-<td>{{ b.level }}</td></tr>
-{% endfor %}
-</table>{% endif %}
+function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML;}
+
+function detailCard(p){
+  const reasons = (p.reasons || []).map(([lab, ar]) =>
+    `<span class="chip ${ar === "↑" ? "c-up" : "c-dn"}">${esc(lab)} ${ar}</span>`).join("");
+  const body = reasons
+    ? `<div class="note" style="margin:0 0 6px">市場と違う評価をした要因（オッズに無い）</div>
+       <div class="chips">${reasons}</div>`
+    : `<div class="note" style="margin:0">市場と概ね一致（際立った乖離なし）。</div>`;
+  return `<tr class="detail"><td colspan="6" style="padding:0;border:0">
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span class="badge ${bcls(p.score)}" style="font-size:13px;padding:2px 8px">評価 ${sgn(p.score)}</span>
+        <span style="font-size:15px;font-weight:600">${esc(p.name)}</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><div class="k">予想勝率</div><div class="v">${pct(p.win_prob)}</div></div>
+        <div class="metric"><div class="k">市場勝率</div><div class="v" style="color:var(--mut)">${pct(p.market_prob)}</div></div>
+      </div>${body}
+    </div></td></tr>`;
+}
+
+function render(d){
+  const m = d.meta;
+  let rows = "";
+  d.predictions.forEach((p, i) => {
+    rows += `<tr data-i="${i}" class="row">
+      <td><span class="badge ${bcls(p.score)}">${sgn(p.score)}</span></td>
+      <td class="l nm">${esc(p.name)} <span style="font-size:11px">▾</span></td>
+      <td>${pct(p.win_prob)}</td>
+      <td style="color:var(--mut)">${pct(p.market_prob)}</td>
+      <td>${pct(p.place_prob)}</td>
+      <td style="color:var(--mut)">${esc(p.level)}</td></tr>`;
+  });
+  let bets = "";
+  (d.bets || []).forEach(b => {
+    const mk = b.ev >= 0 ? "＋" : "－";
+    bets += `<div class="bet"><span>[${esc(b.type)}] ${esc(b.sel)}</span>
+      <span>${b.odds}倍 / 推定${pct(b.prob)} / EV${(b.ev>=0?"+":"")+b.ev.toFixed(2)}${mk}</span></div>`;
+  });
+  document.getElementById("app").innerHTML = `
+    <h1>${esc(m.name)}</h1>
+    <div class="sub">${esc(m.surface)}${m.distance}m / ${m.field_size}頭</div>
+    <p class="note">評価＝市場との乖離 −5〜+5（＋は過小評価/妙味・−は過大評価）。馬名タップで根拠。</p>
+    <table><thead><tr>
+      <th>評価</th><th class="l">馬</th><th>予想</th><th>市場</th><th>複勝</th><th>確信</th>
+    </tr></thead><tbody id="tb">${rows}</tbody></table>
+    <details><summary>③ 参考：買い目のEV</summary>
+      <p class="note">市場効率につき控除率を越える優位性は確認されていません（参考値）。</p>
+      ${bets || '<p class="note">該当なし。</p>'}
+    </details>`;
+
+  const preds = d.predictions;
+  document.getElementById("tb").addEventListener("click", e => {
+    const tr = e.target.closest("tr.row");
+    if (!tr) return;
+    const nx = tr.nextElementSibling;
+    if (nx && nx.classList.contains("detail")) { nx.remove(); return; }
+    document.querySelectorAll("tr.detail").forEach(n => n.remove());
+    tr.insertAdjacentHTML("afterend", detailCard(preds[+tr.dataset.i]));
+  });
+}
+
+fetch(DATA_URL).then(r => {
+  if (!r.ok) throw new Error("取得失敗");
+  return r.json();
+}).then(render).catch(() => {
+  document.getElementById("app").innerHTML =
+    '<p class="center">読み込みに失敗しました。<a href="">再読み込み</a></p>';
+});
+</script>
 </body></html>
