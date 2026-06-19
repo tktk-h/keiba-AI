@@ -10,10 +10,12 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (keiba-research)"}
 
 def fetch_html(url: str) -> str:
     # Network function - used manually only, not exercised by tests.
-    # netkeiba serves pages in EUC-JP; force it (apparent_encoding misdetects).
+    # race.netkeiba.com (出馬表/オッズ) は UTF-8。EUC-JP を強制すると日本語が
+    # 文字化けし、芝/ダや距離のパースも失敗する(db.netkeiba.com の result/horse
+    # ページは EUC-JP のままで、そちらは各モジュールで個別に指定している)。
     resp = requests.get(url, headers=HEADERS, timeout=15)
     resp.raise_for_status()
-    resp.encoding = "EUC-JP"
+    resp.encoding = "UTF-8"
     return resp.text
 
 
