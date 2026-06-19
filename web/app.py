@@ -11,6 +11,13 @@ app = Flask(__name__)
 _cache = {}
 
 
+@app.after_request
+def _no_cache(resp):
+    # スマホが古いHTML/JSをキャッシュして更新が反映されない問題を防ぐ。
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    return resp
+
+
 def _norm_date(raw):
     """'2026-06-21' や '2026/06/21' を 'YYYYMMDD' に正規化。8桁でなければ None。"""
     if not raw:
