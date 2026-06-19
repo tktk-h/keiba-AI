@@ -11,9 +11,17 @@ app = Flask(__name__)
 _cache = {}
 
 
+def _norm_date(raw):
+    """'2026-06-21' や '2026/06/21' を 'YYYYMMDD' に正規化。8桁でなければ None。"""
+    if not raw:
+        return None
+    digits = "".join(c for c in raw if c.isdigit())
+    return digits if len(digits) == 8 else None
+
+
 @app.route("/")
 def index():
-    date = request.args.get("date")
+    date = _norm_date(request.args.get("date"))
     try:
         cards = fetch_race_cards(date) if date else today_cards()
     except Exception:  # noqa: BLE001
@@ -23,7 +31,8 @@ def index():
         venues.setdefault(c["venue"], []).append(c)
     for lst in venues.values():
         lst.sort(key=lambda c: c["number"])
-    return render_template("index.html", venues=venues, date=date)
+    date_iso = f"{date[:4]}-{date[4:6]}-{date[6:]}" if date else ""
+    return render_template("index.html", venues=venues, date=date, date_iso=date_iso)
 
 
 @app.route("/race/<race_id>")

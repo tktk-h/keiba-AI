@@ -2,14 +2,23 @@
 <html lang="ja"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>競馬予想</title>
-<style>body{font-family:sans-serif;margin:1rem;max-width:720px}
-a.card{display:block;padding:.6rem;border:1px solid #ccc;border-radius:6px;
-margin:.25rem 0;text-decoration:none;color:#0366d6}
-h2{margin-top:1.5rem}</style></head>
+<style>body{font-family:system-ui,sans-serif;margin:1rem;max-width:720px}
+a.card{display:block;padding:.7rem;border:1px solid #ccc;border-radius:8px;
+margin:.3rem 0;text-decoration:none;color:#0366d6}
+h2{margin-top:1.5rem}
+.pick{display:flex;gap:8px;align-items:center;margin:.5rem 0 1rem}
+.pick input,.pick button{font-size:16px;padding:6px 10px;border:1px solid #ccc;border-radius:8px}
+.pick button{background:#0366d6;color:#fff;border:0}
+.hint{color:#888;font-size:13px}</style></head>
 <body>
-<h1>本日のレース</h1>
+<h1>レース一覧{% if date %}<small style="font-weight:400;color:#888"> ({{ date_iso }})</small>{% endif %}</h1>
+<form class="pick" method="get" action="/">
+  <input type="date" name="date" value="{{ date_iso }}">
+  <button type="submit">表示</button>
+  {% if date %}<a href="/" class="hint">今日に戻る</a>{% endif %}
+</form>
 {% if not venues %}
-<p>本日の開催はありません(URL に <code>?date=YYYYMMDD</code> で日付指定も可)。</p>
+<p class="hint">この日の開催はありません(数日先の開催日を選ぶと前売りオッズで予想できます)。</p>
 {% endif %}
 {% for venue, cards in venues.items() %}
 <h2>{{ venue }}</h2>
