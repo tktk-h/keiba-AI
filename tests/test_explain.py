@@ -46,3 +46,24 @@ def test_deviation_reasons_excludes_market_and_sorts_by_abs():
 def test_deviation_reasons_drops_zero():
     from keiba.explain import deviation_reasons
     assert deviation_reasons({"age": 0.0, "body_weight": 0.0}) == []
+
+
+def test_attach_reasons_only_for_deviating_horses():
+    from keiba.explain import attach_reasons
+    m = _model()
+    preds = [{"name": "X", "score": 2}, {"name": "Y", "score": 0}]
+    feats = pd.DataFrame({"name": ["X", "Y"], "a": [3.0, 1.0], "b": [2.0, 4.0]})
+    attach_reasons(preds, m, feats)
+    assert "reasons" in preds[0] and len(preds[0]["reasons"]) >= 1
+    label, arrow = preds[0]["reasons"][0]
+    assert isinstance(label, str) and arrow in ("↑", "↓")
+    assert "reasons" not in preds[1]          # |score|<1 は付けない
+
+
+def test_attach_reasons_skips_missing_feature_row():
+    from keiba.explain import attach_reasons
+    m = _model()
+    preds = [{"name": "Z", "score": 3}]        # feats に Z が無い
+    feats = pd.DataFrame({"name": ["X"], "a": [3.0], "b": [2.0]})
+    attach_reasons(preds, m, feats)
+    assert "reasons" not in preds[0]

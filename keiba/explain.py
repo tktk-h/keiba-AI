@@ -59,3 +59,25 @@ def deviation_reasons(contributions: dict, exclude=MARKET_COLUMNS, top_n=3):
              if f not in exclude and c != 0.0]
     items.sort(key=lambda kv: abs(kv[1]), reverse=True)
     return items[:top_n]
+
+
+def attach_reasons(predictions, model, features, min_abs_score=1, top_n=3):
+    """|score| >= min_abs_score の予想行へ、非オッズ根拠を `reasons` として付ける。
+
+    predictions: predict_ranking が返す行のリスト(各行に 'name','score')。
+    features: build_features の DataFrame(列に 'name' と特徴量)。
+    reasons の各要素は (日本語ラベル, '↑'|'↓')。'↑'=勝率を押し上げた要因。
+    特徴量行が見つからない馬はスキップ。
+    """
+    for row in predictions:
+        if abs(row.get("score", 0)) < min_abs_score:
+            continue
+        match = features[features["name"] == row["name"]]
+        if match.empty:
+            continue
+        feature_row = match.iloc[0].to_dict()
+        contribs = feature_contributions(model, feature_row)
+        reasons = deviation_reasons(contribs, top_n=top_n)
+        row["reasons"] = [(FEATURE_LABELS_JA.get(f, f),
+                           "↑" if c > 0 else "↓") for f, c in reasons]
+    return predictions
