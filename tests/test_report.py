@@ -33,3 +33,5 @@ def test_assemble_report_structure():
     assert "value" in rep["predictions"][0]         # 妙味タグ
     evs = [b["ev"] for b in rep["bets"]]
     assert evs == sorted(evs, reverse=True)         # EV降順
+    assert all("score" in p for p in rep["predictions"])   # 乖離スコア
+    assert all(-5 <= p["score"] <= 5 for p in rep["predictions"])

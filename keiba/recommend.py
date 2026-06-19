@@ -77,8 +77,9 @@ def predict_ranking(race, win_probs: dict) -> list:
         score, level = prediction_confidence(runs.get(name, 0), agree, fok)
         rows.append({"name": name, "win_prob": p,
                      "place_prob": place.get(name), "market_prob": mp,
-                     "value": _value_tag(p, mp), "confidence": score,
-                     "level": level})
+                     "value": _value_tag(p, mp),
+                     "score": deviation_score(p, mp),
+                     "confidence": score, "level": level})
     return rows
 
 
