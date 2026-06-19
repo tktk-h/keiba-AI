@@ -1,0 +1,16 @@
+# Cloud Build へのアップロード対象を絞る。
+# 重要: .gcloudignore があると gcloud は .gitignore を見ない。よって model.pkl は
+# (ここで除外しない限り)アップロードされる = コンテナビルドに必要。
+.git/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+data_months/
+data_*.csv
+*.csv
+*.log
+tests/
+docs/
+*.md
