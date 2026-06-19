@@ -61,7 +61,10 @@ def build_race_report(race_id: str, enrich: bool = True) -> dict:
         odds = {"win": {}, "place": {}, "quinella": {}, "wide": {}}
     _backfill_market(race, odds)
     df = build_features(race)
-    model = (load_model(DEFAULT_MODEL_PATH)
-             if os.path.exists(DEFAULT_MODEL_PATH) else None)
+    # 独自予想モデル(model_noodds.pkl)があれば優先。市場(オッズ)を使わず馬の中身で
+    # 予想するので、市場列と乖離し評価/印が活きる。無ければ通常モデルにフォールバック。
+    model_path = next((p for p in ("model_noodds.pkl", DEFAULT_MODEL_PATH)
+                       if os.path.exists(p)), None)
+    model = load_model(model_path) if model_path else None
     win_probs = win_probabilities(df, model=model)
     return assemble_report(race, win_probs, odds, model=model, features=df)
