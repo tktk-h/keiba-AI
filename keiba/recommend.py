@@ -31,6 +31,19 @@ def _agreement(model_p: float, market_p: float) -> float:
 VALUE_FACTOR = 1.3   # モデルが市場より1.3倍以上高い/低いと妙味/過剰人気
 
 
+def deviation_score(model_p: float, market_p: float) -> int:
+    """モデル勝率と市場勝率の乖離を -5..+5 の11段階で返す。
+
+    + は市場が過小評価(モデルが高評価=妙味)、- は過大評価(過剰人気)、0は互角。
+    score = clamp(round(ln(model_p/market_p) / ln(VALUE_FACTOR)), -5, +5)。
+    どちらかが 0/None なら評価不能として 0。
+    """
+    if not model_p or not market_p or model_p <= 0 or market_p <= 0:
+        return 0
+    raw = math.log(model_p / market_p) / math.log(VALUE_FACTOR)
+    return max(-5, min(5, round(raw)))
+
+
 def _value_tag(model_p: float, market_p: float) -> str:
     """モデルと市場の勝率を比べ、妙味/過剰人気/互角 を返す。
 
@@ -64,8 +77,9 @@ def predict_ranking(race, win_probs: dict) -> list:
         score, level = prediction_confidence(runs.get(name, 0), agree, fok)
         rows.append({"name": name, "win_prob": p,
                      "place_prob": place.get(name), "market_prob": mp,
-                     "value": _value_tag(p, mp), "confidence": score,
-                     "level": level})
+                     "value": _value_tag(p, mp),
+                     "score": deviation_score(p, mp),
+                     "confidence": score, "level": level})
     return rows
 
 

@@ -12,9 +12,17 @@ from keiba.model import load_model, DEFAULT_MODEL_PATH
 from keiba.recommend import predict_ranking, recommend_all
 
 
-def assemble_report(race, win_probs: dict, odds: dict) -> dict:
-    """予想ランキングと買い目を、表示しやすい dict にまとめる。"""
+def assemble_report(race, win_probs: dict, odds: dict,
+                    model=None, features=None) -> dict:
+    """予想ランキングと買い目を、表示しやすい dict にまとめる。
+
+    model と features(build_features の DataFrame)が与えられれば、乖離馬に
+    非オッズ根拠 reasons を付ける。
+    """
     predictions = predict_ranking(race, win_probs)
+    if model is not None and features is not None:
+        from keiba.explain import attach_reasons
+        attach_reasons(predictions, model, features)
     bets, any_positive = recommend_all(race, win_probs, odds)
     return {
         "meta": {
@@ -53,4 +61,4 @@ def build_race_report(race_id: str, enrich: bool = True) -> dict:
     model = (load_model(DEFAULT_MODEL_PATH)
              if os.path.exists(DEFAULT_MODEL_PATH) else None)
     win_probs = win_probabilities(df, model=model)
-    return assemble_report(race, win_probs, odds)
+    return assemble_report(race, win_probs, odds, model=model, features=df)
