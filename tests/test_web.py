@@ -26,6 +26,14 @@ def test_index_accepts_dashed_date(monkeypatch):
     assert seen["d"] == "20260621"      # ハイフン入りでも正規化される
 
 
+def test_index_shows_upcoming_when_empty(monkeypatch):
+    monkeypatch.setattr(webapp, "today_cards", lambda: [])
+    monkeypatch.setattr(webapp, "fetch_kaisai_dates",
+                        lambda y, m: ["29991002", "29991003"])
+    body = webapp.app.test_client().get("/").get_data(as_text=True)
+    assert "29991002" in body            # 次の開催日リンクが出る
+
+
 def test_index_has_date_picker(monkeypatch):
     monkeypatch.setattr(webapp, "today_cards", lambda: [])
     client = webapp.app.test_client()
