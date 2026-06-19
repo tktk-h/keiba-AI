@@ -42,6 +42,20 @@ def test_assemble_report_structure():
     assert all(-5 <= p["score"] <= 5 for p in rep["predictions"])
 
 
+def test_meta_has_odds_flag():
+    horses = [_horse("A", 1, 2.0), _horse("B", 2, 5.0), _horse("C", 3, 8.0),
+              _horse("D", 4, 12.0), _horse("E", 5, 20.0)]
+    race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
+                surface="芝", turn="右", track_condition="良", weather="晴",
+                horses=horses)
+    win = {h.name: 0.2 for h in horses}
+    odds = {"win": {}, "place": {}, "quinella": {}, "wide": {}}
+    assert assemble_report(race, win, odds)["meta"]["has_odds"] is True
+    for h in race.horses:
+        h.win_odds = None
+    assert assemble_report(race, win, odds)["meta"]["has_odds"] is False
+
+
 def _two_feature_model():
     X = pd.DataFrame({"age": [3.0, 4, 5, 6], "body_weight": [460.0, 480, 500, 520]})
     y = [0, 0, 1, 1]

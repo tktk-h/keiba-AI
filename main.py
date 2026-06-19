@@ -14,6 +14,13 @@ def main(race_id: str, enrich: bool = False):
     m = rep["meta"]
     print(f"  {m['name']} / {m['surface']}{m['distance']}m / {m['field_size']}頭")
 
+    if not m.get("has_odds", True):
+        print("\n※ オッズ未発表のため予想はまだ出せません(前売り確定後＝概ね前日以降)。")
+        print("  出走馬一覧:")
+        for r in rep["predictions"]:
+            print(f"    {r['name']}")
+        return
+
     print("\n=== ① 予想ダッシュボード(資料) ===")
     print("  予想=モデル勝率 / 市場=オッズが示す勝率")
     print("  評価=市場との乖離 -5〜+5(+は過小評価/妙味・-は過大評価)")
