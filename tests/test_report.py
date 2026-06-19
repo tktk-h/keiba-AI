@@ -1,5 +1,10 @@
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from keiba.models import Race, Horse, PastRun
 from keiba.report import assemble_report
+from keiba.features import build_features
 
 
 def _horse(name, num, odds):
@@ -35,3 +40,29 @@ def test_assemble_report_structure():
     assert evs == sorted(evs, reverse=True)         # EV降順
     assert all("score" in p for p in rep["predictions"])   # 乖離スコア
     assert all(-5 <= p["score"] <= 5 for p in rep["predictions"])
+
+
+def _two_feature_model():
+    X = pd.DataFrame({"age": [3.0, 4, 5, 6], "body_weight": [460.0, 480, 500, 520]})
+    y = [0, 0, 1, 1]
+    m = Pipeline([("scaler", StandardScaler()),
+                  ("clf", LogisticRegression(max_iter=1000))])
+    m.fit(X, y)
+    m.feature_columns_ = ["age", "body_weight"]
+    return m
+
+
+def test_assemble_report_attaches_reasons_for_deviating():
+    horses = [_horse("A", 1, 2.0), _horse("B", 2, 5.0), _horse("C", 3, 8.0),
+              _horse("D", 4, 12.0), _horse("E", 5, 20.0)]
+    race = Race(race_id="r1", name="テストS", date="d", course="東京",
+                distance=1600, surface="芝", turn="右", track_condition="良",
+                weather="晴", horses=horses)
+    win = {h.name: p for h, p in zip(horses, [0.4, 0.25, 0.15, 0.12, 0.08])}
+    odds = {"win": {}, "place": {}, "quinella": {}, "wide": {}}
+    feats = build_features(race)
+    model = _two_feature_model()
+    rep = assemble_report(race, win, odds, model=model, features=feats)
+    deviating = [p for p in rep["predictions"] if abs(p["score"]) >= 1]
+    assert deviating, "テストデータに乖離馬が居ること"
+    assert any("reasons" in p for p in deviating)
