@@ -3,7 +3,7 @@ import time
 import requests
 from bs4 import BeautifulSoup
 from keiba.models import Race, Horse
-from keiba.horse_page import fetch_results, fetch_pedigree
+from keiba.horse_page import fetch_results
 
 HEADERS = {"User-Agent": "Mozilla/5.0 (keiba-research)"}
 
@@ -135,18 +135,19 @@ def parse_race(html: str, race_id: str) -> Race:
                 weather=weather, horses=horses)
 
 
-def enrich_horses(race: Race, limit: int = 5, delay: float = 1.0) -> Race:
-    """Fill each horse's past_runs and pedigree from db.netkeiba horse pages.
+def enrich_horses(race: Race, limit: int = 5, delay: float = 0.5) -> Race:
+    """Fill each horse's past_runs from db.netkeiba horse pages.
 
     Network-bound (manual use only, not exercised by tests). A polite `delay`
-    between horse pages avoids hammering the site.
+    between horse pages avoids hammering the site. Pedigree is intentionally
+    NOT fetched: the model uses no pedigree features, so skipping it halves the
+    per-horse requests (≈2x faster load).
     """
     for horse in race.horses:
         if not horse.horse_id:
             continue
         try:
             horse.past_runs = fetch_results(horse.horse_id, limit=limit)
-            horse.sire, horse.dam, horse.broodmare_sire = fetch_pedigree(horse.horse_id)
         except Exception as exc:  # noqa: BLE001 - keep going on a single failure
             print(f"  ! {horse.name} の詳細取得に失敗: {exc}")
         time.sleep(delay)
