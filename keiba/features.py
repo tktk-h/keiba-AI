@@ -59,6 +59,15 @@ def build_features(race: Race) -> pd.DataFrame:
             **_form_from_past_runs(h.past_runs, last3f_fill),
         })
     df = pd.DataFrame(rows)
+    if not df.empty:
+        # 馬体重は発走直前、馬場も当日まで未確定なことがある。前売りオッズが出て
+        # いれば予想を出せるよう、欠損を中立値で補完する(影響は極小)。オッズ自体が
+        # 無い場合は win_odds が欠損のままなので、勝率は一様(=オッズ待ち)になる。
+        if df["body_weight"].notna().any():
+            df["body_weight"] = df["body_weight"].fillna(df["body_weight"].mean())
+        else:
+            df["body_weight"] = df["body_weight"].fillna(480.0)
+        df["track_condition_score"] = df["track_condition_score"].fillna(0)
     # Add within-race relative features when the inputs are present, so the
     # trained model receives the same columns it learned on.
     if not df.empty and df["win_odds"].notna().any():

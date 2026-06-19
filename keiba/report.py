@@ -31,6 +31,8 @@ def assemble_report(race, win_probs: dict, odds: dict,
             "surface": race.surface,
             "distance": race.distance,
             "field_size": len(race.horses),
+            # オッズが1つでも取れているか。False ならまだ予想を出せない(前売り待ち)。
+            "has_odds": any(h.win_odds for h in race.horses),
         },
         "predictions": predictions,
         "bets": bets,

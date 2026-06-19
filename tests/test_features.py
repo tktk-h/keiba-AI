@@ -68,6 +68,26 @@ def test_build_features_form_log_odds_and_first_timer():
     assert b["prev_win_rate"] == 0.0
 
 
+def _bare_horse(name, odds):
+    # 当日まで馬体重が未発表(None)の出走馬を模す
+    return Horse(name=name, sex="牡", age=4, weight_carried=55.0, jockey="J",
+                 post=1, number=1, win_odds=odds, popularity=1, body_weight=None,
+                 body_weight_diff=None, running_style=None, sire=None, dam=None,
+                 broodmare_sire=None, training_time=None, training_course=None,
+                 training_eval=None, past_runs=[])
+
+
+def test_build_features_imputes_missing_body_weight_and_condition():
+    # 前売りオッズはあるが馬体重・馬場が未発表でも、特徴量が数値で埋まること。
+    race = Race(race_id="r", name="t", date="d", course="c", distance=1600,
+                surface="芝", turn="右", track_condition="", weather="晴",
+                horses=[_bare_horse("A", 2.0), _bare_horse("B", 5.0)])
+    df = build_features(race)
+    assert df["body_weight"].notna().all()          # 欠損を中立値で補完
+    assert (df["track_condition_score"] == 0).all()  # 不明な馬場は良(0)扱い
+    assert "body_weight_z" in df.columns             # オッズありなので相対特徴も付く
+
+
 def test_build_features_handles_none_finish_in_past_runs():
     # 中止/除外の過去走は finish=None。min()/平均でクラッシュしないこと。
     race = Race(race_id="r1", name="t", date="d", course="東京", distance=1600,
