@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: keiba-dashboard
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    # enrich(各馬の過去走取得)が30秒前後かかるので worker timeout を長めに。
+    # threads を増やしてシェルとデータ取得を同時に捌けるようにする。
+    startCommand: gunicorn web.app:app --workers 1 --threads 4 --timeout 180 --bind 0.0.0.0:$PORT
+    autoDeploy: true
