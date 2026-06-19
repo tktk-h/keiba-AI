@@ -9,7 +9,7 @@ from keiba.features import build_features
 from keiba.predictor import win_probabilities
 from keiba.odds_page import fetch_odds
 from keiba.model import load_model, DEFAULT_MODEL_PATH
-from keiba.recommend import predict_ranking, recommend_all
+from keiba.recommend import predict_ranking, recommend_all, assign_marks
 
 
 def assemble_report(race, win_probs: dict, odds: dict,
@@ -23,6 +23,7 @@ def assemble_report(race, win_probs: dict, odds: dict,
     if model is not None and features is not None:
         from keiba.explain import attach_reasons
         attach_reasons(predictions, model, features)
+    assign_marks(predictions)
     bets, any_positive = recommend_all(race, win_probs, odds)
     return {
         "meta": {

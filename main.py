@@ -21,6 +21,14 @@ def main(race_id: str, enrich: bool = False):
             print(f"    {r['name']}")
         return
 
+    print("\n=== AI予想印(理由つき) ===")
+    by_mark = {p["mark"]: p for p in rep["predictions"] if p.get("mark")}
+    for s in ["◎", "○", "▲", "△", "注", "穴"]:
+        p = by_mark.get(s)
+        if p:
+            print(f"  {s} {p['name']:<11} 予想{p['win_prob']:.0%}/市場{p['market_prob']:.0%}"
+                  f"/評価{_fmt_score(p['score'])} — {p['mark_reason']}")
+
     print("\n=== ① 予想ダッシュボード(資料・枠順) ===")
     print("  予想=モデル勝率 / 市場=オッズが示す勝率")
     print("  評価=市場との乖離 -5〜+5(+は過小評価/妙味・-は過大評価)")

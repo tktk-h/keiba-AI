@@ -58,6 +58,37 @@ def _value_tag(model_p: float, market_p: float) -> str:
     return "互角"
 
 
+MARK_ORDER = ["◎", "○", "▲", "△", "注", "穴"]
+
+
+def assign_marks(predictions: list, ana_min_score: int = 1) -> list:
+    """AI予想印を各予想行に付ける(`mark` と `mark_reason`)。
+
+    ◎○▲△注 は予想勝率の上位5頭(強さ順)。穴 は6番手以下(人気薄)のうち乖離
+    スコアが最大かつ +ana_min_score 以上の馬だけ(市場が過小評価=妙味の人気薄)。
+    該当が無ければ穴は付けない(強い馬への誤付けを避ける)。印は1頭ずつ。
+    """
+    for r in predictions:
+        r["mark"] = None
+        r["mark_reason"] = None
+    if not predictions:
+        return predictions
+    order = sorted(predictions, key=lambda r: r.get("win_prob") or 0, reverse=True)
+
+    strength = [("◎", "最有力。予想勝率トップ。"), ("○", "本命に次ぐ評価。"),
+                ("▲", "勝ち負けまであると見る3番手。"), ("△", "連・複の相手(連下)。"),
+                ("注", "注目。押さえたい一頭。")]
+    for r, (sym, why) in zip(order[:5], strength):
+        r["mark"], r["mark_reason"] = sym, why
+
+    longshots = order[5:]
+    ana = max(longshots, key=lambda r: r.get("score") or 0, default=None)
+    if ana is not None and (ana.get("score") or 0) >= ana_min_score:
+        ana["mark"] = "穴"
+        ana["mark_reason"] = f"人気薄だが市場を上回る評価(評価{ana['score']:+d})。妙味。"
+    return predictions
+
+
 def predict_ranking(race, win_probs: dict) -> list:
     """全馬を推定勝率順に、複勝率・確信度つきで返す(①予想)。
 
