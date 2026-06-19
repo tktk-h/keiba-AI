@@ -30,3 +30,19 @@ def test_feature_contributions_missing_is_zero():
     m = _model()
     c = feature_contributions(m, {"a": 3.0})   # b 欠損
     assert c["b"] == 0.0
+
+
+def test_deviation_reasons_excludes_market_and_sorts_by_abs():
+    from keiba.explain import deviation_reasons
+    contribs = {"win_odds": 5.0, "age": -0.4,
+                "body_weight": 0.2, "prev_avg_finish": -0.9}
+    r = deviation_reasons(contribs, top_n=2)
+    feats = [f for f, _ in r]
+    assert "win_odds" not in feats          # 市場要因は除外
+    assert r[0][0] == "prev_avg_finish"     # |-0.9| が最大
+    assert len(r) == 2
+
+
+def test_deviation_reasons_drops_zero():
+    from keiba.explain import deviation_reasons
+    assert deviation_reasons({"age": 0.0, "body_weight": 0.0}) == []

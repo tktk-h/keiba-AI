@@ -48,3 +48,14 @@ def feature_contributions(model, feature_row) -> dict:
         z = (v - scaler.mean_[i]) / scaler.scale_[i]
         out[c] = float(coef[i] * z)
     return out
+
+
+def deviation_reasons(contributions: dict, exclude=MARKET_COLUMNS, top_n=3):
+    """オッズ系を除外し、|寄与| の大きい順に最大 top_n を返す。
+
+    返り値: [(特徴量名, 寄与値), ...]。寄与が 0 の要因は含めない。
+    """
+    items = [(f, c) for f, c in contributions.items()
+             if f not in exclude and c != 0.0]
+    items.sort(key=lambda kv: abs(kv[1]), reverse=True)
+    return items[:top_n]
