@@ -44,6 +44,11 @@ border-radius:50%;animation:r 0.8s linear infinite;margin:40px auto 12px}
 details{margin-top:14px}summary{cursor:pointer;font-size:14px;font-weight:600}
 .bet{font-size:13px;padding:6px 2px;border-top:.5px solid var(--line);
 display:flex;justify-content:space-between;gap:8px}
+.mkbar{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.mk{font-size:13px;padding:6px 10px;border:.5px solid #ccc;border-radius:8px;
+background:#fff;cursor:pointer}
+.mk b{font-size:15px;margin-right:2px}
+.mk:active{background:#f0f0f0}
 </style></head>
 <body><div class="wrap">
 <p><a href="/">← レース一覧</a></p>
@@ -88,6 +93,18 @@ function detailCard(p){
     </div></td></tr>`;
 }
 
+function markCard(p){
+  const reasons = (p.reasons || []).map(([lab, ar]) =>
+    `<span class="chip ${ar === "↑" ? "c-up" : "c-dn"}">${esc(lab)} ${ar}</span>`).join("");
+  return `<div class="card">
+    <div style="margin-bottom:6px"><b style="font-size:16px">${p.mark}</b> ${esc(p.name)}
+      <span class="note">予想${pct(p.win_prob)} / 市場${pct(p.market_prob)} / 評価${sgn(p.score)}</span></div>
+    <div style="font-size:13px;margin-bottom:${reasons ? "6px" : "0"}">${esc(p.mark_reason || "")}</div>
+    ${reasons ? `<div class="chips">${reasons}</div>` : ""}</div>`;
+}
+
+const MARK_ORDER = ["◎", "○", "▲", "△", "注", "穴"];
+
 function render(d){
   const m = d.meta;
   if (!m.has_odds){
@@ -106,7 +123,7 @@ function render(d){
   ordered.forEach(({p, i}) => {
     rows += `<tr data-i="${i}" class="row">
       <td class="s1">${umaban(p)}</td>
-      <td class="s2 l nm">${esc(p.name)}<span style="font-size:10px;color:var(--mut)"> ▾</span></td>
+      <td class="s2 l nm">${p.mark ? `<b style="color:var(--ink)">${p.mark}</b> ` : ""}${esc(p.name)}<span style="font-size:10px;color:var(--mut)"> ▾</span></td>
       <td class="l" style="color:var(--mut)">${esc(p.jockey || "")}</td>
       <td>${odds(p.win_odds)}</td>
       <td style="color:var(--mut)">${p.popularity ?? "—"}</td>
@@ -122,9 +139,17 @@ function render(d){
     bets += `<div class="bet"><span>[${esc(b.type)}] ${esc(b.sel)}</span>
       <span>${b.odds}倍 / 推定${pct(b.prob)} / EV${(b.ev>=0?"+":"")+b.ev.toFixed(2)}${mk}</span></div>`;
   });
+  const byMark = {};
+  d.predictions.forEach(p => { if (p.mark) byMark[p.mark] = p; });
+  const mbar = MARK_ORDER.filter(s => byMark[s]).map(s =>
+    `<button class="mk" data-mark="${s}"><b>${s}</b>${esc(byMark[s].name)}</button>`).join("");
+
   document.getElementById("app").innerHTML = `
     <h1>${esc(m.name)}</h1>
     <div class="sub">${esc(m.surface)}${m.distance}m / ${m.field_size}頭</div>
+    <p class="note">AI予想印（タップで理由）。◎本命 ○対抗 ▲単穴 △連下 注 穴</p>
+    <div class="mkbar">${mbar}</div>
+    <div id="mkdetail"></div>
     <p class="note">枠順。評価＝市場との乖離 −5〜+5（＋は過小評価/妙味・−は過大評価）。馬名タップで根拠。</p>
     <div class="scroll"><table class="dash"><thead><tr>
       <th class="s1">馬番</th><th class="s2 l">馬名</th><th class="l">騎手</th>
@@ -134,6 +159,15 @@ function render(d){
       <p class="note">市場効率につき控除率を越える優位性は確認されていません（参考値）。</p>
       ${bets || '<p class="note">該当なし。</p>'}
     </details>`;
+
+  document.querySelector(".mkbar").addEventListener("click", e => {
+    const b = e.target.closest(".mk");
+    if (!b) return;
+    const det = document.getElementById("mkdetail");
+    if (det.dataset.m === b.dataset.mark) { det.innerHTML = ""; det.dataset.m = ""; return; }
+    det.innerHTML = markCard(byMark[b.dataset.mark]);
+    det.dataset.m = b.dataset.mark;
+  });
 
   const preds = d.predictions;
   document.getElementById("tb").addEventListener("click", e => {

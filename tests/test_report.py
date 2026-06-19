@@ -43,6 +43,8 @@ def test_assemble_report_structure():
     p0 = rep["predictions"][0]
     for k in ("post", "number", "jockey", "win_odds", "popularity"):
         assert k in p0                      # 出馬表の基本情報も持つ
+    marks = {p["mark"] for p in rep["predictions"] if p.get("mark")}
+    assert "◎" in marks and "○" in marks    # AI印が付く
 
 
 def test_meta_has_odds_flag():
