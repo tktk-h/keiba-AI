@@ -12,6 +12,27 @@ def test_index_lists_races(monkeypatch):
     assert "202605030411" in body
 
 
+def test_index_accepts_dashed_date(monkeypatch):
+    seen = {}
+
+    def fake(d):
+        seen["d"] = d
+        return []
+
+    monkeypatch.setattr(webapp, "fetch_race_cards", fake)
+    client = webapp.app.test_client()
+    resp = client.get("/?date=2026-06-21")
+    assert resp.status_code == 200
+    assert seen["d"] == "20260621"      # ハイフン入りでも正規化される
+
+
+def test_index_has_date_picker(monkeypatch):
+    monkeypatch.setattr(webapp, "today_cards", lambda: [])
+    client = webapp.app.test_client()
+    body = client.get("/").get_data(as_text=True)
+    assert 'type="date"' in body        # 日付ピッカーがある
+
+
 def _fake_report():
     return {"meta": {"race_id": "r", "name": "テストS", "surface": "芝",
                      "distance": 1600, "field_size": 2},
