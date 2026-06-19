@@ -21,14 +21,18 @@ def main(race_id: str, enrich: bool = False):
             print(f"    {r['name']}")
         return
 
-    print("\n=== ① 予想ダッシュボード(資料) ===")
+    print("\n=== ① 予想ダッシュボード(資料・枠順) ===")
     print("  予想=モデル勝率 / 市場=オッズが示す勝率")
     print("  評価=市場との乖離 -5〜+5(+は過小評価/妙味・-は過大評価)")
-    print(f"  {'評価':>4} {'馬名':<11} {'予想':>6} {'市場':>6} {'複勝':>5} 確信")
-    for r in rep["predictions"]:
+    print(f"  {'馬番':>2} {'馬名':<11} {'騎手':<7} {'オッズ':>6} {'人気':>2} "
+          f"{'予想':>5} {'市場':>5} {'評価':>3} {'複勝':>4} 確信")
+    for r in sorted(rep["predictions"], key=lambda x: (x.get("number") or 99)):
         pp = f"{r['place_prob']:.0%}" if r["place_prob"] is not None else "—"
-        print(f"  {_fmt_score(r['score']):>4} {r['name']:<11} "
-              f"{r['win_prob']:>6.1%} {r['market_prob']:>6.1%} {pp:>5} {r['level']}")
+        od = f"{r['win_odds']:.1f}" if r.get("win_odds") else "—"
+        pop = r.get("popularity") or "—"
+        print(f"  {r.get('number') or '?':>2} {r['name']:<11} {(r.get('jockey') or '')[:6]:<7} "
+              f"{od:>6} {pop:>2} {r['win_prob']:>5.1%} {r['market_prob']:>5.1%} "
+              f"{_fmt_score(r['score']):>3} {pp:>4} {r['level']}")
 
     print("\n=== ② 乖離している馬の根拠(オッズに無い要因) ===")
     devs = [r for r in rep["predictions"] if r.get("reasons")]

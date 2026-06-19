@@ -13,11 +13,17 @@ a{color:#0366d6;text-decoration:none}
 h1{font-size:17px;font-weight:600;margin:6px 0 2px}
 .sub{color:var(--mut);font-size:12px}
 .note{color:var(--mut);font-size:12px;margin:6px 2px}
-table{width:100%;table-layout:fixed;border-collapse:collapse;font-size:13px}
-th{color:var(--mut);font-size:11px;font-weight:500;padding:6px 2px}
-td{padding:8px 2px;border-top:.5px solid var(--line);text-align:right}
-th.l,td.l{text-align:left;padding-left:4px}
-.nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#0366d6}
+table{border-collapse:collapse;font-size:13px;white-space:nowrap}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -12px;padding:0 12px}
+.dash{min-width:540px}
+th{color:var(--mut);font-size:11px;font-weight:500;padding:6px 4px}
+td{padding:8px 4px;border-top:.5px solid var(--line);text-align:right}
+th.l,td.l{text-align:left}
+th.s1,td.s1{position:sticky;left:0;width:34px;min-width:34px;background:#fff;z-index:1;text-align:center}
+th.s2,td.s2{position:sticky;left:34px;background:#fff;z-index:1;box-shadow:1px 0 0 var(--line)}
+.nm{color:#0366d6}
+.umaban{display:inline-block;width:24px;line-height:22px;border-radius:4px;
+font-size:12px;font-weight:600;text-align:center;border:1px solid rgba(0,0,0,.25)}
 .badge{display:inline-block;min-width:24px;padding:1px 5px;border-radius:6px;
 font-size:11px;font-weight:600;text-align:center;background:#eee;color:#888}
 .b-up{background:var(--up-bg);color:var(--up-fg)}
@@ -55,6 +61,13 @@ const bcls = s => s > 0 ? "b-up" : (s < 0 ? "b-dn" : "");
 
 function esc(t){const d=document.createElement("div");d.textContent=t;return d.innerHTML;}
 
+const FRAME=[null,{bg:"#fff",fg:"#222"},{bg:"#222",fg:"#fff"},{bg:"#e8413b",fg:"#fff"},
+{bg:"#1f6fd6",fg:"#fff"},{bg:"#f5d000",fg:"#222"},{bg:"#2aa44f",fg:"#fff"},
+{bg:"#f08300",fg:"#fff"},{bg:"#f6a8c0",fg:"#222"}];
+function umaban(p){const f=FRAME[p.post]||{bg:"#fff",fg:"#222"};
+  return `<span class="umaban" style="background:${f.bg};color:${f.fg}">${p.number??""}</span>`;}
+const odds = x => (x == null ? "—" : (+x).toFixed(1));
+
 function detailCard(p){
   const reasons = (p.reasons || []).map(([lab, ar]) =>
     `<span class="chip ${ar === "↑" ? "c-up" : "c-dn"}">${esc(lab)} ${ar}</span>`).join("");
@@ -62,7 +75,7 @@ function detailCard(p){
     ? `<div class="note" style="margin:0 0 6px">市場と違う評価をした要因（オッズに無い）</div>
        <div class="chips">${reasons}</div>`
     : `<div class="note" style="margin:0">市場と概ね一致（際立った乖離なし）。</div>`;
-  return `<tr class="detail"><td colspan="6" style="padding:0;border:0">
+  return `<tr class="detail"><td colspan="10" style="padding:0;border:0">
     <div class="card">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span class="badge ${bcls(p.score)}" style="font-size:13px;padding:2px 8px">評価 ${sgn(p.score)}</span>
@@ -87,13 +100,19 @@ function render(d){
        ${names}`;
     return;
   }
+  const ordered = d.predictions.map((p, i) => ({p, i}))
+    .sort((a, b) => (a.p.number ?? 99) - (b.p.number ?? 99));
   let rows = "";
-  d.predictions.forEach((p, i) => {
+  ordered.forEach(({p, i}) => {
     rows += `<tr data-i="${i}" class="row">
-      <td><span class="badge ${bcls(p.score)}">${sgn(p.score)}</span></td>
-      <td class="l nm">${esc(p.name)} <span style="font-size:11px">▾</span></td>
+      <td class="s1">${umaban(p)}</td>
+      <td class="s2 l nm">${esc(p.name)}<span style="font-size:10px;color:var(--mut)"> ▾</span></td>
+      <td class="l" style="color:var(--mut)">${esc(p.jockey || "")}</td>
+      <td>${odds(p.win_odds)}</td>
+      <td style="color:var(--mut)">${p.popularity ?? "—"}</td>
       <td>${pct(p.win_prob)}</td>
       <td style="color:var(--mut)">${pct(p.market_prob)}</td>
+      <td style="text-align:center"><span class="badge ${bcls(p.score)}">${sgn(p.score)}</span></td>
       <td>${pct(p.place_prob)}</td>
       <td style="color:var(--mut)">${esc(p.level)}</td></tr>`;
   });
@@ -106,10 +125,11 @@ function render(d){
   document.getElementById("app").innerHTML = `
     <h1>${esc(m.name)}</h1>
     <div class="sub">${esc(m.surface)}${m.distance}m / ${m.field_size}頭</div>
-    <p class="note">評価＝市場との乖離 −5〜+5（＋は過小評価/妙味・−は過大評価）。馬名タップで根拠。</p>
-    <table><thead><tr>
-      <th>評価</th><th class="l">馬</th><th>予想</th><th>市場</th><th>複勝</th><th>確信</th>
-    </tr></thead><tbody id="tb">${rows}</tbody></table>
+    <p class="note">枠順。評価＝市場との乖離 −5〜+5（＋は過小評価/妙味・−は過大評価）。馬名タップで根拠。</p>
+    <div class="scroll"><table class="dash"><thead><tr>
+      <th class="s1">馬番</th><th class="s2 l">馬名</th><th class="l">騎手</th>
+      <th>オッズ</th><th>人気</th><th>予想</th><th>市場</th><th>評価</th><th>複勝</th><th>確信</th>
+    </tr></thead><tbody id="tb">${rows}</tbody></table></div>
     <details><summary>③ 参考：買い目のEV</summary>
       <p class="note">市場効率につき控除率を越える優位性は確認されていません（参考値）。</p>
       ${bets || '<p class="note">該当なし。</p>'}

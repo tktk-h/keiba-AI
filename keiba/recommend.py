@@ -70,16 +70,23 @@ def predict_ranking(race, win_probs: dict) -> list:
     inv = {h.name: 1.0 / h.win_odds for h in race.horses if h.win_odds}
     z = sum(inv.values())
     market = {n: v / z for n, v in inv.items()} if z else {}
+    by_name = {h.name: h for h in race.horses}
     rows = []
     for name, p in sorted(win_probs.items(), key=lambda kv: kv[1], reverse=True):
         mp = market.get(name, 0.0)
         agree = _agreement(p, mp)
         score, level = prediction_confidence(runs.get(name, 0), agree, fok)
+        h = by_name.get(name)
         rows.append({"name": name, "win_prob": p,
                      "place_prob": place.get(name), "market_prob": mp,
                      "value": _value_tag(p, mp),
                      "score": deviation_score(p, mp),
-                     "confidence": score, "level": level})
+                     "confidence": score, "level": level,
+                     "post": getattr(h, "post", None),
+                     "number": getattr(h, "number", None),
+                     "jockey": getattr(h, "jockey", None),
+                     "win_odds": getattr(h, "win_odds", None),
+                     "popularity": getattr(h, "popularity", None)})
     return rows
 
 

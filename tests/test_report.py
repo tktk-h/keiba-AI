@@ -40,6 +40,9 @@ def test_assemble_report_structure():
     assert evs == sorted(evs, reverse=True)         # EV降順
     assert all("score" in p for p in rep["predictions"])   # 乖離スコア
     assert all(-5 <= p["score"] <= 5 for p in rep["predictions"])
+    p0 = rep["predictions"][0]
+    for k in ("post", "number", "jockey", "win_odds", "popularity"):
+        assert k in p0                      # 出馬表の基本情報も持つ
 
 
 def test_meta_has_odds_flag():
